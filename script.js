@@ -140,10 +140,10 @@ ELF.prototype.processElfShdr64 = function(elfFile){
 
         const sh_name = elfFile.getUint32(shdr_entry_offset, this.is_lsb);	/* Section name, index in string tbl */
         const sh_type = elf_shdr.sh_type[elfFile.getUint32(shdr_entry_offset + 4, this.is_lsb)];		/* Type of section */
-        // const sh_flags = ;		/* Miscellaneous section attributes */
-        // const sh_addr = ;		/* Section virtual addr at execution */
-        // const sh_offset = ;		/* Section file offset */
-        // const sh_size = ;		/* Size of section in bytes */
+        const sh_flags = elf_shdr.sh_flags[elfFile.getUint32(shdr_entry_offset + 8, this.is_lsb)];		/* Miscellaneous section attributes */
+        const sh_addr = Number(elfFile.getBigUint64(shdr_entry_offset + 16, this.is_lsb));		/* Section virtual addr at execution */
+        const sh_offset = Number(elfFile.getBigUint64(shdr_entry_offset + 24, this.is_lsb));		/* Section file offset */
+        const sh_size = Number(elfFile.getBigUint64(shdr_entry_offset + 32, this.is_lsb));		/* Size of section in bytes */
         // const sh_link = ;		/* Index of another section */
         // const sh_info = ;		/* Additional section information */
         // const sh_addralign = ;	/* Section alignment */
@@ -151,12 +151,18 @@ ELF.prototype.processElfShdr64 = function(elfFile){
         
         var shdr_entry = {
             sh_name : sh_name,
-            sh_type : sh_type
+            sh_type : sh_type,
+            sh_flags : sh_flags,
+            sh_addr : sh_addr,
+            sh_offset : sh_offset,
+            sh_size : sh_size
         };
 
-        if(sh_type == null) {
-            console.log(elfFile.getUint32(shdr_entry_offset + 4, this.is_lsb));
-        }
+        console.log(elfFile.getUint32(shdr_entry_offset + 8, this.is_lsb));
+
+        // if(sh_type == null) {
+        //     console.log(elfFile.getUint32(shdr_entry_offset + 4, this.is_lsb));
+        // }
 
         shdr_entries.push(shdr_entry);
     }
