@@ -98,7 +98,7 @@ ELF.prototype.processElfPhdr64 = function(elfFile){
         var phdr_entry_offset = this.elf_hdr.e_phoff + phdr_entry_count * this.elf_hdr.e_phentsize;
         
         const p_type = elf_phdr.p_type[elfFile.getUint32(phdr_entry_offset, this.is_lsb)];
-        const p_flags = elf_phdr.p_flags[elfFile.getUint32(phdr_entry_offset + 4, this.is_lsb)];
+        const p_flags = this.getSetFlags(elfFile.getUint32(phdr_entry_offset + 4, this.is_lsb), elf_phdr.p_flags);
         const p_offset = Number(elfFile.getBigUint64(phdr_entry_offset + 8, this.is_lsb));		/* Segment file offset */
         const p_vaddr = Number(elfFile.getBigUint64(phdr_entry_offset + 16, this.is_lsb));		/* Segment virtual address */
         const p_paddr = Number(elfFile.getBigUint64(phdr_entry_offset + 24, this.is_lsb));	    /* Segment physical address */
@@ -140,14 +140,14 @@ ELF.prototype.processElfShdr64 = function(elfFile){
 
         const sh_name = elfFile.getUint32(shdr_entry_offset, this.is_lsb);	/* Section name, index in string tbl */
         const sh_type = elf_shdr.sh_type[elfFile.getUint32(shdr_entry_offset + 4, this.is_lsb)];		/* Type of section */
-        const sh_flags = elf_shdr.sh_flags[elfFile.getUint32(shdr_entry_offset + 8, this.is_lsb)];		/* Miscellaneous section attributes */
+        const sh_flags = this.getSetFlags(elfFile.getUint32(shdr_entry_offset + 8, this.is_lsb), elf_shdr.sh_flags);		/* Miscellaneous section attributes */
         const sh_addr = Number(elfFile.getBigUint64(shdr_entry_offset + 16, this.is_lsb));		/* Section virtual addr at execution */
         const sh_offset = Number(elfFile.getBigUint64(shdr_entry_offset + 24, this.is_lsb));		/* Section file offset */
         const sh_size = Number(elfFile.getBigUint64(shdr_entry_offset + 32, this.is_lsb));		/* Size of section in bytes */
-        // const sh_link = ;		/* Index of another section */
-        // const sh_info = ;		/* Additional section information */
-        // const sh_addralign = ;	/* Section alignment */
-        // const sh_entsize = ;	/* Entry size if section holds table */
+        const sh_link = elfFile.getUint32(shdr_entry_offset + 40, this.is_lsb);		/* Index of another section */
+        const sh_info = elfFile.getUint32(shdr_entry_offset + 44, this.is_lsb);	 	/* Additional section information */
+        const sh_addralign = Number(elfFile.getBigUint64(shdr_entry_offset + 48, this.is_lsb));	/* Section alignment */
+        const sh_entsize = Number(elfFile.getBigUint64(shdr_entry_offset + 56, this.is_lsb));	/* Entry size if section holds table */
         
         var shdr_entry = {
             sh_name : sh_name,
@@ -155,14 +155,12 @@ ELF.prototype.processElfShdr64 = function(elfFile){
             sh_flags : sh_flags,
             sh_addr : sh_addr,
             sh_offset : sh_offset,
-            sh_size : sh_size
+            sh_size : sh_size,
+            sh_link : sh_link,
+            sh_info : sh_info,
+            sh_addralign : sh_addralign,
+            sh_entsize : sh_entsize
         };
-
-        console.log(elfFile.getUint32(shdr_entry_offset + 8, this.is_lsb));
-
-        // if(sh_type == null) {
-        //     console.log(elfFile.getUint32(shdr_entry_offset + 4, this.is_lsb));
-        // }
 
         shdr_entries.push(shdr_entry);
     }
@@ -174,9 +172,9 @@ ELF.prototype.processElfShdr64 = function(elfFile){
 };
 
 ELF.prototype.processByClass = function(functionPrefix, elfFile) {
-    const processorSuffix = this.e_ident.EI_CLASS;
-    const suffixShort = this.e_ident.EI_CLASS == "ELFCLASS64" ? "64" : "32";
-    const processorName = `${functionPrefix}${suffixShort}`;
+    
+    const processorSuffix = this.e_ident.EI_CLASS == "ELFCLASS64" ? "64" : "32";
+    const processorName = `${functionPrefix}${processorSuffix}`;
     
     const processor = this[processorName];
     
@@ -198,6 +196,23 @@ ELF.prototype.processElfPhdr = function(elfFile) {
 ELF.prototype.processElfShdr = function(elfFile) {
     return this.processByClass('processElfShdr', elfFile);
 };
+
+
+ELF.prototype.getFlagName = function(bitmask, currentFlag, flags) {
+    return (bitmask & currentFlag) !== 0 ? flags[currentFlag] : null;
+}
+
+ELF.prototype.getSetFlags = function(bitmask, flags) {
+    const setFlags = [];
+    for (const currentFlag in flags) {
+      const flagName = this.getFlagName(bitmask, currentFlag, flags);
+      if (flagName) {
+        setFlags.push(flagName);
+      }
+    }
+    return setFlags;
+  }
+
 
 ELF.prototype.run = function(file){
     
