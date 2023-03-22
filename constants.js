@@ -385,10 +385,40 @@ const elf_hdr = {
         
         
     },
+    /* Values for e_version.  */
     e_version : {
-        0 : "EV_NONE",
-        1 : "EV_CURRENT"
-    }
+        0 : "EV_NONE", /* Invalid ELF version */
+        1 : "EV_CURRENT" /* Current version */
+    },
+    /* Value for e_phnum. */
+    e_phnum : {
+        /*
+        This is defined as 0xffff, the largest number e_phnum can have, 
+        specifying where the actual number of program headers is assigned
+        */
+        0xffff : "PN_XNUM" /* Extended numbering */
+    },
+
+    e_shstrndx : {
+        0 : "SHN_UNDEF",
+        0xffff : "SHN_XINDEX",
+
+    },
+
+
+    "PN_XNUM" : 0xffff,
+
+    /* special section indexes that are shared between other members*/
+
+    "SHN_UNDEF" : 0x0,
+    "SHN_LORESERVE" : 0xff00,
+    "SHN_LOPROC" : 0xff00,
+    "SHN_HIPROC" : 0xff1f,
+    "SHN_LIVEPATCH" : 0xff20,
+    "SHN_ABS" : 0xfff1,
+    "SHN_COMMON" : 0xfff2,
+    "SHN_HIRESERVE" : 0xffff
+
 }
 
 /* These constants are for the segment types stored in the image headers */
@@ -504,15 +534,4 @@ const elf_shdr = {
     
 }
 
-
-
-// /* special section indexes */
-// 0 SHN_UNDEF	
-// 0xff00 SHN_LORESERVE	
-// 0xff00 SHN_LOPROC	
-// 0xff1f SHN_HIPROC	
-// 0xff20 SHN_LIVEPATCH	
-// 0xfff1 SHN_ABS	
-// 0xfff2 SHN_COMMON	
-// 0xffff SHN_HIRESERVE	
 

@@ -11,6 +11,9 @@ ELF.prototype.loadFile = function(file){
 };
 
 ELF.prototype.parseELF = function(arrayBuffer){
+
+    this.file_length = arrayBuffer.byteLength;
+
     const elfFile = new DataView(arrayBuffer, 0, arrayBuffer.byteLength);
     
     this.e_ident = this.processEIdent(elfFile);
@@ -55,19 +58,116 @@ ELF.prototype.processElfHdr32 = function(elfFile){
 
 ELF.prototype.processElfHdr64 = function(elfFile){
     
+    /* This member of the structure identifies the object file type */
     const e_type = elf_hdr.e_type[elfFile.getUint16(16, this.is_lsb)];
+
+    /* This member of the structure identifies the object file type */
     const e_machine = elf_hdr.e_machine[elfFile.getUint16(18, this.is_lsb)];
-    const e_version = elf_hdr.e_version[elfFile.getUint32(20, this.is_lsb)];
-    const e_entry = Number(elfFile.getBigUint64(24, this.is_lsb));
+
+    /* This member of the structure identifies the object file type */
+    const e_version = elf_hdr.e_version[elfFile.getUint32(20, this.is_lsb)]; 
+
+    /* 
+    This member gives the virtual address to which the system first 
+    transfers control, thus starting the process.  
+    If the file has no associated entry point, this member holds zero.
+    */
+    const e_entry = Number(elfFile.getBigUint64(24, this.is_lsb)); 
+
+    /* 
+    This member holds the program header table's file offset in bytes.  
+    If the file has no program header table, this member holds zero. 
+    */
     const e_phoff = Number(elfFile.getBigUint64(32, this.is_lsb));
+
+    /*
+    This member holds the section header table's file offset in bytes.  
+    If the file has no section header table, this member holds zero.
+    */
     const e_shoff = Number(elfFile.getBigUint64(40, this.is_lsb));
+
+    /* 
+    This member holds processor-specific flags associated with the file.  
+    Flag names take the form EF_`machine_flag'.  Currently, no flags have been defined.
+    */
     const e_flags = elfFile.getUint32(48, this.is_lsb);
+
+    /* 
+    This member holds the ELF header's size in bytes.
+    */
     const e_ehsize = elfFile.getUint16(52, this.is_lsb);
+
+    /* 
+    This member holds the size in bytes of one entry in the file's program header table; 
+    all entries are the same size.
+    */
     const e_phentsize = elfFile.getUint16(54, this.is_lsb);
-    const e_phnum = elfFile.getUint16(56, this.is_lsb);
+
+    /* 
+    This member holds the number of entries in the program header table.  
+    Thus the product of e_phentsize and e_phnum gives the table's size in bytes.  
+    If a file has no program header,  e_phnum holds the value zero.
+    */
+    var e_phnum = elfFile.getUint16(56, this.is_lsb);
+
+    /*
+    If the number of entries in the program header table is larger than or equal to 
+    PN_XNUM (0xffff), this member holds PN_XNUM (0xffff) and the real number of 
+    entries in the program header table is held in the sh_info member of the initial 
+    entry in section header table. 
+    */
+
+    if(e_phnum >= elf_hdr["PN_XNUM"]){
+        e_phnum = elf_hdr.e_phnum[0xffff]; //PN_XNUM
+    }
+
+    /* 
+    This member holds a sections header's size in bytes.  
+    A section header is one entry in the section header table; 
+    all entries are the same size.
+    */
     const e_shentsize = elfFile.getUint16(58, this.is_lsb);
-    const e_shnum = elfFile.getUint16(60, this.is_lsb);
-    const e_shstrndx = elfFile.getUint16(62, this.is_lsb);
+
+    /* 
+    This member holds the number of entries in the section header table.  
+    Thus the product of e_shentsize and e_shnum gives the section header table's size in bytes.  
+    If a file has  no  section header table, e_shnum holds the value of zero.
+    */
+    var e_shnum = elfFile.getUint16(60, this.is_lsb);
+
+    /*
+    If the number of entries in the section header table is larger than or equal to 
+    SHN_LORESERVE (0xff00), e_shnum holds the value zero and the real number of entries 
+    in the section header table is held in the sh_size member of the initial 
+    entry in section header table.  
+    */
+
+    if(e_shnum >= elf_hdr["SHN_LORESERVE"]){
+        e_shnum = 0;
+    }
+
+    /* 
+    This member holds the section header table index of the entry 
+    associated with the section name string table. 
+    */
+    var e_shstrndx = elfFile.getUint16(62, this.is_lsb);
+
+    /*
+    If the file has no section name string  table,  this  member  holds  the  value
+    SHN_UNDEF.
+
+    If the index of section name string table section is larger than or equal to 
+    SHN_LORESERVE (0xff00), this member holds SHN_XINDEX (0xffff) and the real index 
+    of the section name string table section is held in the sh_link member of 
+    the initial entry in section header table.  
+    */
+
+    if(e_shstrndx == elf_hdr["SHN_UNDEF"]){
+        e_shstrndx = elf_hdr.e_shstrndx[0]; //SHN_UNDEF
+    }else if(e_shstrndx >= elf_hdr["SHN_LORESERVE"]){
+        e_shstrndx = elf_hdr.e_shstrndx[0xffff]; // SHN_XINDEX
+    }
+
     
     return{
         e_type : e_type,
@@ -172,7 +272,7 @@ ELF.prototype.processElfShdr64 = function(elfFile){
 };
 
 ELF.prototype.processByClass = function(functionPrefix, elfFile) {
-    
+
     const processorSuffix = this.e_ident.EI_CLASS == "ELFCLASS64" ? "64" : "32";
     const processorName = `${functionPrefix}${processorSuffix}`;
     
