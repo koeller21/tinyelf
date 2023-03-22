@@ -225,22 +225,79 @@ ELF.prototype.processElfPhdr64 = function(elfFile){
     
 };
 
+ELF.prototype.getSectionHeaderString = function(elfFile, offset) {
+    
+    // Initialize an array to store the characters
+    var chars = [];
+
+    // Read the first character from the given offset in the ELF file
+    var currentChar = elfFile.getUint8(offset, this.is_lsb);
+
+    // Initialize an offset counter to track the read position
+    var offsetCounter = 0;
+
+    // Continue reading characters until a null byte (0) is encountered
+    while (currentChar !== 0) {
+        // Add the current character to the array
+        chars.push(String.fromCharCode(currentChar));
+
+        // Increment the offset counter
+        offsetCounter++;
+
+        // Read the next character from the ELF file
+        currentChar = elfFile.getUint8(offset + offsetCounter, this.is_lsb);
+    }
+
+    // Join the characters into a string and return the result
+    return chars.join("");
+}
 
 ELF.prototype.processElfShdr32 = function(elfFile){
     
 };
 
 ELF.prototype.processElfShdr64 = function(elfFile){
+
+    /*
+    Get .shstrtab - section offset so we can resolve sh_name
+    - e_shstrndx contains section header index to .shstrtab (e.g. 36)
+    - therefore, e_shstrndx can be used to fetch offset address of 
+      actual .shstrtab section (e.g. 0x3eb4)
+    - sh_name is then just an index offset into the section header string table section
+    */
+    const shstrtab_entry_offset = this.elf_hdr.e_shoff + this.elf_hdr.e_shstrndx * this.elf_hdr.e_shentsize;
+    const shstrtab_sh_offset = Number(elfFile.getBigUint64(shstrtab_entry_offset + 24, this.is_lsb));
+
     
     var shdr_entries = [];
     
     for(var shdr_entry_count = 0; shdr_entry_count < this.elf_hdr.e_shnum; shdr_entry_count++){
         
+        // calculate shdr_entry offset
         var shdr_entry_offset = this.elf_hdr.e_shoff + shdr_entry_count * this.elf_hdr.e_shentsize;
 
-        const sh_name = elfFile.getUint32(shdr_entry_offset, this.is_lsb);	/* Section name, index in string tbl */
-        const sh_type = elf_shdr.sh_type[elfFile.getUint32(shdr_entry_offset + 4, this.is_lsb)];		/* Type of section */
-        const sh_flags = this.getSetFlags(elfFile.getUint32(shdr_entry_offset + 8, this.is_lsb), elf_shdr.sh_flags);		/* Miscellaneous section attributes */
+        /*
+        This member specifies the name of the section. 
+        Its value is an index into the section header string table section, 
+        giving the location of a null-terminated string.
+        */
+        const sh_name_offset = elfFile.getUint32(shdr_entry_offset, this.is_lsb);
+        const sh_name = this.getSectionHeaderString(elfFile, shstrtab_sh_offset + sh_name_offset);
+
+        /*
+        This member categorizes the section's contents and semantics.
+        */
+        const sh_type = elf_shdr.sh_type[elfFile.getUint32(shdr_entry_offset + 4, this.is_lsb)];
+
+        /*
+        Sections support one-bit flags that describe miscellaneous attributes.  
+        If a flag bit is set in sh_flags, the attribute is "on" for the section.  
+        Otherwise, the attribute is "off"  or  does not apply.  
+        Undefined attributes are set to zero.
+        */
+        const sh_flags = this.getSetFlags(elfFile.getUint32(shdr_entry_offset + 8, this.is_lsb), elf_shdr.sh_flags);
+
+
         const sh_addr = Number(elfFile.getBigUint64(shdr_entry_offset + 16, this.is_lsb));		/* Section virtual addr at execution */
         const sh_offset = Number(elfFile.getBigUint64(shdr_entry_offset + 24, this.is_lsb));		/* Section file offset */
         const sh_size = Number(elfFile.getBigUint64(shdr_entry_offset + 32, this.is_lsb));		/* Size of section in bytes */

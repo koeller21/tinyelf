@@ -406,17 +406,55 @@ const elf_hdr = {
     },
 
 
-    "PN_XNUM" : 0xffff,
+    "PN_XNUM" : 0xffff, /* Extended numbering */
 
-    /* special section indexes that are shared between other members*/
+    /*
+    A section  header table index is a subscript into this array. Some section header table indices 
+    are reserved: the initial entry and the indices between SHN_LORESERVE and SHN_HIRESERVE.  
+    The initial entry is used in ELF extensions for e_phnum, e_shnum, and e_shstrndx; in other cases, 
+    each field in the initial entry is set to zero.  An object file does not have sections for these special indices:
+    */
 
-    "SHN_UNDEF" : 0x0,
-    "SHN_LORESERVE" : 0xff00,
-    "SHN_LOPROC" : 0xff00,
-    "SHN_HIPROC" : 0xff1f,
+    /* This value marks an undefined, missing, irrelevant, or otherwise meaningless section reference.*/
+    "SHN_UNDEF" : 0x0, 
+
+    /* This value specifies the lower bound of the range of reserved indices. */
+    "SHN_LORESERVE" : 0xff00, 
+
+    /* 
+    Values greater in the inclusive range [SHN_LOPROC, SHN_HIPROC] are reserved for 
+    processor-specific semantics. 
+    */
+    "SHN_LOPROC" : 0xff00, 
+
+    /* 
+    This value specifies the absolute value for the corresponding reference.  
+    For example, a symbol defined relative to section number SHN_ABS has an 
+    absolute value and is not affected by relocation.
+    */
+    "SHN_HIPROC" : 0xff1f, 
+
+    
     "SHN_LIVEPATCH" : 0xff20,
+
+    /*
+    This value specifies the absolute value for the corresponding reference.  
+    For example, a symbol defined relative to section number SHN_ABS has an absolute 
+    value and is not affected by relocation.
+    */
     "SHN_ABS" : 0xfff1,
+
+    /*
+    Symbols defined relative to this section are common symbols, such as FORTRAN COMMON or 
+    unallocated C external variables.
+    */
     "SHN_COMMON" : 0xfff2,
+
+    /*
+    This value specifies the upper bound of the range of reserved indices.  
+    The system reserves indices between SHN_LORESERVE and SHN_HIRESERVE, inclusive.  
+    The section header  table  does  not contain entries for the reserved indices.
+    */
     "SHN_HIRESERVE" : 0xffff
 
 }
