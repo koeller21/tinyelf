@@ -398,65 +398,65 @@ const elf_hdr = {
         */
         0xffff : "PN_XNUM" /* Extended numbering */
     },
-
+    
     e_shstrndx : {
         0 : "SHN_UNDEF",
         0xffff : "SHN_XINDEX",
-
+        
     },
-
-
+    
+    
     "PN_XNUM" : 0xffff, /* Extended numbering */
-
+    
     /*
     A section  header table index is a subscript into this array. Some section header table indices 
     are reserved: the initial entry and the indices between SHN_LORESERVE and SHN_HIRESERVE.  
     The initial entry is used in ELF extensions for e_phnum, e_shnum, and e_shstrndx; in other cases, 
     each field in the initial entry is set to zero.  An object file does not have sections for these special indices:
     */
-
+    
     /* This value marks an undefined, missing, irrelevant, or otherwise meaningless section reference.*/
     "SHN_UNDEF" : 0x0, 
-
+    
     /* This value specifies the lower bound of the range of reserved indices. */
     "SHN_LORESERVE" : 0xff00, 
-
+    
     /* 
     Values greater in the inclusive range [SHN_LOPROC, SHN_HIPROC] are reserved for 
     processor-specific semantics. 
     */
     "SHN_LOPROC" : 0xff00, 
-
+    
     /* 
     This value specifies the absolute value for the corresponding reference.  
     For example, a symbol defined relative to section number SHN_ABS has an 
     absolute value and is not affected by relocation.
     */
     "SHN_HIPROC" : 0xff1f, 
-
+    
     
     "SHN_LIVEPATCH" : 0xff20,
-
+    
     /*
     This value specifies the absolute value for the corresponding reference.  
     For example, a symbol defined relative to section number SHN_ABS has an absolute 
     value and is not affected by relocation.
     */
     "SHN_ABS" : 0xfff1,
-
+    
     /*
     Symbols defined relative to this section are common symbols, such as FORTRAN COMMON or 
     unallocated C external variables.
     */
     "SHN_COMMON" : 0xfff2,
-
+    
     /*
     This value specifies the upper bound of the range of reserved indices.  
     The system reserves indices between SHN_LORESERVE and SHN_HIRESERVE, inclusive.  
     The section header  table  does  not contain entries for the reserved indices.
     */
     "SHN_HIRESERVE" : 0xffff
-
+    
 }
 
 /* These constants are for the segment types stored in the image headers */
@@ -570,6 +570,47 @@ const elf_shdr = {
     },
     
     
+}
+
+const elf_sym  = {
+    /* Values for symbol type */
+    st_type : {
+        0 : "STT_NOTYPE",		/* Symbol type is unspecified */
+        1 : "STT_OBJECT",		/* Symbol is a data object */
+        2 : "STT_FUNC",		    /* Symbol is a code object */
+        3 : "STT_SECTION",		/* Symbol associated with a section */
+        4 : "STT_FILE",		    /* Symbol gives a file name */
+        5 : "STT_COMMON",		/* An uninitialised common block */
+        6 : "STT_TLS",			/* Thread local data object */
+        8 : "STT_RELC",		    /* Complex relocation expression */
+        9 : "STT_SRELC",		/* Signed Complex relocation expression */
+        10 : "STT_LOOS",		/* OS-specific semantics */
+        10 : "STT_GNU_IFUNC",	/* Symbol is an indirect code object */
+        12 : "STT_HIOS",		/* OS-specific semantics */
+        13 : "STT_LOPROC",		/* Processor-specific semantics */
+        15 : "STT_HIPROC"		/* Processor-specific semantics */
+    },
+    /* values for symbol binding/scope */
+    st_bind : {
+        
+        0 : "STB_LOCAL",		/* Symbol not visible outside obj */
+        1 : "STB_GLOBAL",		/* Symbol visible outside obj */
+        2 : "STB_WEAK",		    /* Like globals, lower precedence */
+        10 : "STB_LOOS",		/* OS-specific semantics */
+        10 : "STB_GNU_UNIQUE",	/* Symbol is unique in namespace */
+        12 : "STB_HIOS",		/* OS-specific semantics */
+        13 : "STB_LOPROC",		/* Processor-specific semantics */
+        15 : "STB_HIPROC"		/* Processor-specific semantics */
+        
+    },
+    /* The following constants control how a symbol may be accessed once it has
+    become part of an executable or shared library.  */
+    st_other : {
+        0 : "STV_DEFAULT",			/* Visibility is specified by binding type */
+        1 : "STV_INTERNAL",			/* OS specific version of STV_HIDDEN */
+        2 : "STV_HIDDEN",			/* Can only be seen inside currect component */
+        3 : "STV_PROTECTED"			/* Treat as STB_LOCAL inside current component */
+    }
 }
 
 

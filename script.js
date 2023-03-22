@@ -22,6 +22,8 @@ ELF.prototype.parseELF = function(arrayBuffer){
     this.elf_hdr = this.processElfHdr(elfFile);
     this.elf_phdr = this.processElfPhdr(elfFile);
     this.elf_shdr = this.processElfShdr(elfFile);
+
+    this.elf_symtab = this.processElfSymtab(elfFile);
 };
 
 ELF.prototype.processEIdent = function(elfFile){
@@ -226,7 +228,7 @@ ELF.prototype.processElfPhdr64 = function(elfFile){
 };
 
 ELF.prototype.getSectionHeaderString = function(elfFile, offset) {
-    
+
     // Initialize an array to store the characters
     var chars = [];
 
@@ -259,11 +261,11 @@ ELF.prototype.processElfShdr32 = function(elfFile){
 ELF.prototype.processElfShdr64 = function(elfFile){
 
     /*
-    Get .shstrtab - section offset so we can resolve sh_name
+    Get .shstrtab-section offset so we can resolve sh_name
     - e_shstrndx contains section header index to .shstrtab (e.g. 36)
     - therefore, e_shstrndx can be used to fetch offset address of 
       actual .shstrtab section (e.g. 0x3eb4)
-    - sh_name is then just an index offset into the section header string table section
+    - sh_name is then just an index offset (e.g. 27) into the section header string table section
     */
     const shstrtab_entry_offset = this.elf_hdr.e_shoff + this.elf_hdr.e_shstrndx * this.elf_hdr.e_shentsize;
     const shstrtab_sh_offset = Number(elfFile.getBigUint64(shstrtab_entry_offset + 24, this.is_lsb));
@@ -304,7 +306,14 @@ ELF.prototype.processElfShdr64 = function(elfFile){
         const sh_link = elfFile.getUint32(shdr_entry_offset + 40, this.is_lsb);		/* Index of another section */
         const sh_info = elfFile.getUint32(shdr_entry_offset + 44, this.is_lsb);	 	/* Additional section information */
         const sh_addralign = Number(elfFile.getBigUint64(shdr_entry_offset + 48, this.is_lsb));	/* Section alignment */
-        const sh_entsize = Number(elfFile.getBigUint64(shdr_entry_offset + 56, this.is_lsb));	/* Entry size if section holds table */
+
+        /*
+        Some sections hold a table of fixed-sized entries, such as a symbol table.  
+        For such a section, this member gives the size in bytes for each entry.  
+        This member contains zero if the section
+        does not hold a table of fixed-size entries.
+        */
+        const sh_entsize = Number(elfFile.getBigUint64(shdr_entry_offset + 56, this.is_lsb));	
         
         var shdr_entry = {
             sh_name : sh_name,
@@ -327,6 +336,97 @@ ELF.prototype.processElfShdr64 = function(elfFile){
     
     
 };
+
+ELF.prototype.processElfSymtab32 = function(elfFile){
+
+}
+
+ELF.prototype.processElfSymtab64 = function(elfFile){
+
+    // get symtab offset
+    for(var i = 0; i < this.elf_shdr.length; i++){
+        if(this.elf_shdr[i].sh_name == ".symtab" && this.elf_shdr[i].sh_type == "SHT_SYMTAB"){
+            // var symtab_offset = this.elf_shdr[i].sh_offset;
+            var symtab = this.elf_shdr[i];
+        }
+    }
+    // ToDo: Handle if no symtab section present
+
+    // check if sh_size is 0 or sh_size is greater than entire file size, if yes, abort
+    if(symtab.sh_size == 0 || symtab.sh_size > this.file_length){
+        return null;
+    }
+
+    // check if sh_entsize is 0 or if sh_entsize is greater than sh_size, if yes, abort
+    if(symtab.sh_entsize == 0 || symtab.sh_entsize > symtab.sh_size){
+        return null;
+    }
+    
+    // get number of entries in symtable
+    var symtab_entries_number = symtab.sh_size / symtab.sh_entsize;
+
+    var symtab_entries = [];
+    
+    for(var symtab_entry_count = 0; symtab_entry_count < symtab_entries_number; symtab_entry_count++){
+
+        // calculate offset
+        var symtab_offset = symtab.sh_offset + (symtab_entry_count * symtab.sh_entsize);
+        
+        /*
+        This  member holds an index into the object file's symbol string table, which holds 
+        character representations of the symbol names.  If the value is nonzero, it represents a 
+        string table index that gives the symbol name.  Otherwise, the symbol has no name.
+        */
+        const st_name = elfFile.getUint32(symtab_offset, this.is_lsb);
+
+        /*
+        This member specifies the symbol's type and binding attributes.
+        Its made up of 8 bits, the first four bits represent the type (T) 
+        and the last four bits represent the binding (B):
+
+        
+        bit value | 128 | 64 | 32 | 16 | 8 | 4 | 2 | 1 | 
+        {B,T}     | B   | B  | B  | B  | T | T | T | T |
+        Operation |         >> 4       |       &0xF    |
+
+        Thus, we do some bit shifting and bitwise operation to get the 
+        type and the binding
+        */
+
+        const st_bind = elf_sym.st_bind[elfFile.getUint8(symtab_offset + 4, this.is_lsb) >> 4]; 
+        const st_type = elf_sym.st_type[elfFile.getUint8(symtab_offset + 4, this.is_lsb) & 0xF]; 
+
+        /* 
+        This member defines the symbol visibility.
+        This controls how a symbol may be accessed once it has
+        become part of an executable or shared library.
+
+        Its made up of 8 bits but only the first two represent (4 combinations) the visibility (V), thus
+        bit value | 128 | 64 | 32 | 16 | 8 | 4 | 2 | 1 | 
+        {V}       | -   | -  | -  | -  | - | - | V | V |
+        Operation |            -               |  &0x3 |
+        
+        */
+       const st_other = elf_sym.st_other[elfFile.getUint8(symtab_offset + 5, this.is_lsb) & 0x3] ;
+
+        var symtab_entry = {
+            st_name : st_name,
+            st_bind : st_bind,
+            st_type : st_type,
+            st_other : st_other
+        }
+
+        symtab_entries.push(symtab_entry);
+
+
+    }
+
+    return symtab_entries;
+}
+
+/* These functions disassemble and assemble a symbol table st_info field,
+   which contains the symbol binding and symbol type.  The STB_ and STT_
+   defines identify the binding and type.  */
 
 ELF.prototype.processByClass = function(functionPrefix, elfFile) {
 
@@ -353,6 +453,11 @@ ELF.prototype.processElfPhdr = function(elfFile) {
 ELF.prototype.processElfShdr = function(elfFile) {
     return this.processByClass('processElfShdr', elfFile);
 };
+
+ELF.prototype.processElfSymtab = function(elfFile) {
+    return this.processByClass('processElfSymtab', elfFile);
+};
+
 
 
 ELF.prototype.getFlagName = function(bitmask, currentFlag, flags) {
