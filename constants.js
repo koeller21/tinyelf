@@ -12,6 +12,34 @@ https://docs.oracle.com/cd/E19683-01/817-3677/chapter6-94076/index.html
 
 */
 
+/*
+Basic elf data types in bytes
+*/
+const elf_base_types = {
+    /* 32-bit ELF base types. */
+    32 : {
+        "char"       : 1,
+        "Elf_Addr"   : 4,
+        "Elf_Half"   : 2,
+        "Elf_Off"    : 4,
+        "Elf_Sword"  : 4, //signed
+        "Elf_Word"   : 4
+    },
+    /* 64-bit ELF base types. */
+    64 : {
+        "char"       : 1,
+        "Elf_Addr"   : 8,
+        "Elf_Half"   : 2,
+        "Elf_SHalf"  : 2, //signed
+        "Elf_Off"    : 8,
+        "Elf_Sword"  : 4, //signed
+        "Elf_Word"   : 4,
+        "Elf_Xword"  : 8,
+        "Elf_Sxword" : 8  //signed
+
+    }
+};
+
 
 const e_ident = {
     
