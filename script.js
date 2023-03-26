@@ -35,6 +35,7 @@ ELF.prototype.parseELF = function(arrayBuffer){
     this.elf_shdr = this.processElfShdr(elfFile);
     
     this.elf_symtab = this.processElfSymtab(elfFile);
+    this.elf_dynsymtab = this.processElfDynSymtab(elfFile);
 };
 
 ELF.prototype.processEIdent = function(elfFile){
@@ -505,6 +506,14 @@ ELF.prototype.processElfShdr64 = function(elfFile){
     
 };
 
+ELF.prototype.processElfDynSymtab32 = function(elfFile){
+    
+}
+
+ELF.prototype.processElfDynSymtab64 = function(elfFile){
+    
+}
+
 ELF.prototype.processElfSymtab32 = function(elfFile){
     
 }
@@ -512,12 +521,16 @@ ELF.prototype.processElfSymtab32 = function(elfFile){
 ELF.prototype.processElfSymtab64 = function(elfFile){
     
     var symtab = null;
+    var strtab_offset = 0; // strtab used for symtab st_name
     
-    // ToDo : UGLY !!!! Fix this so that it doesnt iterate! get symtab offset
+    // get symtab from elf section header
+    // to my knowledge, there no other way but to check for sh_type SHT_SYMTAB
+    // to get symbol table 
     for(var i = 0; i < this.elf_shdr.length; i++){
-        if(this.elf_shdr[i].sh_name == ".symtab" && this.elf_shdr[i].sh_type == "SHT_SYMTAB"){
-            // var symtab_offset = this.elf_shdr[i].sh_offset;
+        if(this.elf_shdr[i].sh_type == "SHT_SYMTAB"){
             symtab = this.elf_shdr[i];
+            strtab_offset = this.elf_shdr[symtab.sh_link].sh_offset;
+
         }
     }
     // Handle if no symtab section present (e.g. if not compiled with -g flag in gcc)
@@ -553,7 +566,7 @@ ELF.prototype.processElfSymtab64 = function(elfFile){
         string table index that gives the symbol name. Otherwise, the symbol has no name.
         */
         const st_name_offset = elfFile.getUint32(symtab_offset, this.is_lsb);
-        const st_name = this.getSectionHeaderString(elfFile, 0x3bc8 + st_name_offset);
+        const st_name = this.getSectionHeaderString(elfFile, strtab_offset + st_name_offset);
         symtab_offset += this.data_types.Elf_Word;
         
         /*
@@ -639,7 +652,8 @@ ELF.prototype.processByClass = function(functionPrefix, elfFile) {
     if (processor && typeof processor === 'function') {
         return processor.call(this, elfFile);
     } else {
-        console.error(`Unsupported processor for EI_CLASS '${this.e_ident.EI_CLASS}' and prefix '${functionPrefix}'`);
+        const err = new Error(`Unsupported processor for EI_CLASS '${this.e_ident.EI_CLASS}' and prefix '${functionPrefix}'`)
+        throw err;
     }
 };
 
@@ -657,6 +671,10 @@ ELF.prototype.processElfShdr = function(elfFile) {
 
 ELF.prototype.processElfSymtab = function(elfFile) {
     return this.processByClass('processElfSymtab', elfFile);
+};
+
+ELF.prototype.processElfDynSymtab = function(elfFile) {
+    return this.processByClass('processElfDynSymtab', elfFile);
 };
 
 
