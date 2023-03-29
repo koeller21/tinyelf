@@ -36,7 +36,7 @@ const elf_base_types = {
         "Elf_Word"   : 4,
         "Elf_Xword"  : 8,
         "Elf_Sxword" : 8  //signed
-
+        
     }
 };
 
@@ -533,24 +533,24 @@ const elf_phdr = {
 const elf_shdr = {
     /* Values for section header, sh_type field.  */
     sh_type : {
-        0 : "SHT_NULL", /* Section header table entry unused */
+        0 : "SHT_NULL",     /* Section header table entry unused */
         1 : "SHT_PROGBITS", /* Program specific (private) data */
-        2 : "SHT_SYMTAB", /* Link editing symbol table */
-        3 : "SHT_STRTAB", /* A string table */
-        4 : "SHT_RELA", /* Relocation entries with addends */
-        5 : "SHT_HASH", /* A symbol hash table */
-        6 : "SHT_DYNAMIC", /* Information for dynamic linking */
-        7 : "SHT_NOTE", /* Information that marks file */
-        8 : "SHT_NOBITS", /* Section occupies no space in file */
-        9 : "SHT_REL", /* Relocation entries, no addends */
-        10 : "SHT_SHLIB", /* Reserved, unspecified semantics */
-        11 : "SHT_DYNSYM", /* Dynamic linking symbol table */
+        2 : "SHT_SYMTAB",   /* Link editing symbol table */
+        3 : "SHT_STRTAB",   /* A string table */
+        4 : "SHT_RELA",     /* Relocation entries with addends */
+        5 : "SHT_HASH",     /* A symbol hash table */
+        6 : "SHT_DYNAMIC",  /* Information for dynamic linking */
+        7 : "SHT_NOTE",     /* Information that marks file */
+        8 : "SHT_NOBITS",   /* Section occupies no space in file */
+        9 : "SHT_REL",      /* Relocation entries, no addends */
+        10 : "SHT_SHLIB",   /* Reserved, unspecified semantics */
+        11 : "SHT_DYNSYM",  /* Dynamic linking symbol table */
         12 : "SHT_NUM",
-        14 : "SHT_INIT_ARRAY",	  		/* Array of ptrs to init functions */
-        15 : "SHT_FINI_ARRAY",	  		/* Array of ptrs to finish functions */
-        16 : "SHT_PREINIT_ARRAY", 		/* Array of ptrs to pre-init funcs */
+        14 : "SHT_INIT_ARRAY",	  	/* Array of ptrs to init functions */
+        15 : "SHT_FINI_ARRAY",	  	/* Array of ptrs to finish functions */
+        16 : "SHT_PREINIT_ARRAY", 	/* Array of ptrs to pre-init funcs */
         17 : "SHT_GROUP",	  		/* Section contains a section group */
-        18 : "SHT_SYMTAB_SHNDX",  		/* Indices for SHN_XINDEX entries */
+        18 : "SHT_SYMTAB_SHNDX",  	/* Indices for SHN_XINDEX entries */
         19 : "SHT_RELR",	  		/* RELR relative relocations */
         
         0x60000000 : "SHT_LOOS",		/* First of OS specific semantics */
@@ -641,4 +641,125 @@ const elf_sym  = {
     }
 }
 
+const elf_dynamic = {
+    /*
+    The d_tag member controls the interpretation of d_un, which is a 
+    union of d_val, representing integer values with
+    various interpretations and d_ptr, representing 
+    program  virtual  addresses.  When interpreting these addresses, 
+    the actual address should be computed based on the original file
+    value and memory base address.  Files do not contain relocation 
+    entries to fixup these addresses.
+    */
+    d_tag : {
+        0 : "DT_NULL",
+        1 : "DT_NEEDED",
+        2 : "DT_PLTRELSZ",
+        3 : "DT_PLTGOT",
+        4 : "DT_HASH",
+        5 : "DT_STRTAB",
+        6 : "DT_SYMTAB",
+        7 : "DT_RELA",
+        8 : "DT_RELASZ",
+        9 : "DT_RELAENT",
+        10 : "DT_STRSZ",
+        11 : "DT_SYMENT",
+        12 : "DT_INIT",
+        13 : "DT_FINI",
+        14 : "DT_SONAME",
+        15 : "DT_RPATH",
+        16 : "DT_SYMBOLIC",
+        17 : "DT_REL",
+        18 : "DT_RELSZ",
+        19 : "DT_RELENT",
+        20 : "DT_PLTREL",
+        21 : "DT_DEBUG",
+        22 : "DT_TEXTREL",
+        23 : "DT_JMPREL",
+        24 : "DT_BIND_NOW",
+        25 : "DT_INIT_ARRAY",
+        26 : "DT_FINI_ARRAY",
+        27 : "DT_INIT_ARRAYSZ",
+        28 : "DT_FINI_ARRAYSZ",
+        29 : "DT_RUNPATH",
+        30 : "DT_FLAGS",
+        32 : "DT_PREINIT_ARRAY",
+        33 : "DT_PREINIT_ARRAYSZ",
+        34 : "DT_SYMTAB_SHNDX",
+        35 : "DT_RELRSZ",
+        36 : "DT_RELR",
+        37 : "DT_RELRENT",
+        38 : "DT_ENCODING",
+        
+        /* Note, the Oct 4, 1999 draft of the ELF ABI changed the values
+        for DT_LOOS and DT_HIOS.  Some implementations however, use
+        values outside of the new range (see below).	 */
+        0x60000000 : "OLD_DT_LOOS",	
+        0x6000000d : "DT_LOOS",	
+        0x6ffff000 : "DT_HIOS",	
+        0x6fffffff : "OLD_DT_HIOS",	
+        0x70000000 : "DT_LOPROC",	
+        0x7fffffff : "DT_HIPROC",	
+        
+        /*
+        The next 2 dynamic tag ranges, integer value range 
+        (DT_VALRNGLO to DT_VALRNGHI) and virtual address range 
+        (DT_ADDRRNGLO to DT_ADDRRNGHI),are used on Solaris.  
+        We support them everywhere.  Note these values lie 
+        outside of the (new) range for OS specific values.  
+        This is a deliberate special case and we maintain it 
+        for backwards compatability.
+        */
+        
+        0x6ffffd00 : "DT_VALRNGLO",	
+        0x6ffffdf4 : "DT_GNU_FLAGS_1",  
+        0x6ffffdf5 : "DT_GNU_PRELINKED", 
+        0x6ffffdf6 : "DT_GNU_CONFLICTSZ", 
+        0x6ffffdf7 : "DT_GNU_LIBLISTSZ", 
+        0x6ffffdf8 : "DT_CHECKSUM",	
+        0x6ffffdf9 : "DT_PLTPADSZ",	
+        0x6ffffdfa : "DT_MOVEENT",	
+        0x6ffffdfb : "DT_MOVESZ",	
+        0x6ffffdfc : "DT_FEATURE",	
+        0x6ffffdfd : "DT_POSFLAG_1",	
+        0x6ffffdfe : "DT_SYMINSZ",	
+        0x6ffffdff : "DT_SYMINENT",	
+        0x6ffffdff : "DT_VALRNGHI",	
+        
+        0x6ffffe00 : "DT_ADDRRNGLO",	
+        0x6ffffef5 : "DT_GNU_HASH",	
+        0x6ffffef6 : "DT_TLSDESC_PLT",	
+        0x6ffffef7 : "DT_TLSDESC_GOT",	
+        0x6ffffef8 : "DT_GNU_CONFLICT",	
+        0x6ffffef9 : "DT_GNU_LIBLIST",	
+        0x6ffffefa : "DT_CONFIG",	
+        0x6ffffefb : "DT_DEPAUDIT",	
+        0x6ffffefc : "DT_AUDIT",	
+        0x6ffffefd : "DT_PLTPAD",	
+        0x6ffffefe : "DT_MOVETAB",	
+        0x6ffffeff : "DT_SYMINFO",	
+        0x6ffffeff : "DT_ADDRRNGHI",	
+        
+        0x6ffffff9 : "DT_RELACOUNT",	
+        0x6ffffffa : "DT_RELCOUNT",	
+        0x6ffffffb : "DT_FLAGS_1",	
+        0x6ffffffc : "DT_VERDEF",	
+        0x6ffffffd : "DT_VERDEFNUM",	
+        0x6ffffffe : "DT_VERNEED",	
+        0x6fffffff : "DT_VERNEEDNUM",	
+        
+        /* This tag is a GNU extension to the Solaris version scheme.  */
+        0x6ffffff0 : "DT_VERSYM",	
+        
+        0x70000000 : "DT_LOPROC",	
+        0x7fffffff : "DT_HIPROC",	
+        
+        /* These section tags are used on Solaris.  We support them
+        everywhere, and hope they do not conflict.  */
+        
+        0x7ffffffd : "DT_AUXILIARY",	
+        0x7ffffffe : "DT_USED",		
+        0x7fffffff : "DT_FILTER",	
+    }
+}
 

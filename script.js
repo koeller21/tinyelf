@@ -34,6 +34,8 @@ ELF.prototype.parseELF = function(arrayBuffer){
     this.elf_phdr = this.processElfPhdr(elfFile);
     this.elf_shdr = this.processElfShdr(elfFile);
     
+    this.elf_dyn = this.processElfDyn(elfFile);
+    
     this.elf_symtab = this.processElfSymtab(elfFile);
     this.elf_dynsymtab = this.processElfDynSymtab(elfFile);
 };
@@ -435,7 +437,7 @@ ELF.prototype.processElfShdr64 = function(elfFile){
         
         const sh_addr = Number(elfFile.getBigUint64(shdr_entry_offset, this.is_lsb));
         shdr_entry_offset += this.data_types.Elf_Addr;
-
+        
         /*
         This  member's value holds the byte offset from the beginning of the file to 
         the first byte in the section. One section type, SHT_NOBITS, occupies no space 
@@ -443,7 +445,7 @@ ELF.prototype.processElfShdr64 = function(elfFile){
         */
         const sh_offset = Number(elfFile.getBigUint64(shdr_entry_offset, this.is_lsb));
         shdr_entry_offset += this.data_types.Elf_Off;
-
+        
         /*
         This member holds the section's size in bytes. Unless the section type is SHT_NOBITS, 
         the section occupies sh_size bytes in the file. A section of type SHT_NOBITS may have a nonzero size,
@@ -451,19 +453,19 @@ ELF.prototype.processElfShdr64 = function(elfFile){
         */
         const sh_size = Number(elfFile.getBigUint64(shdr_entry_offset, this.is_lsb));
         shdr_entry_offset += this.data_types.Elf_Xword;
-
+        
         /*
         This member holds a section header table index link, whose interpretation depends on the section type.
         */
         const sh_link = elfFile.getUint32(shdr_entry_offset, this.is_lsb);
         shdr_entry_offset += this.data_types.Elf_Word;
-
+        
         /*
         This member holds extra information, whose interpretation depends on the section type.
         */
         const sh_info = elfFile.getUint32(shdr_entry_offset, this.is_lsb);
         shdr_entry_offset += this.data_types.Elf_Word;
-
+        
         /*
         Some sections have address alignment constraints. If a section holds a doubleword, 
         the system must ensure doubleword alignment for the entire section. That is, the value of sh_addr must
@@ -482,7 +484,7 @@ ELF.prototype.processElfShdr64 = function(elfFile){
         */
         const sh_entsize = Number(elfFile.getBigUint64(shdr_entry_offset, this.is_lsb));
         shdr_entry_offset += this.data_types.Elf_Xword;
-
+        
         
         var shdr_entry = {
             sh_name : sh_name,
@@ -506,12 +508,69 @@ ELF.prototype.processElfShdr64 = function(elfFile){
     
 };
 
+ELF.prototype.processElfDyn32 = function(elfFile){
+    
+}
+
+ELF.prototype.processElfDyn64 = function(elfFile){
+    /*
+    The .dynamic section contains a series of structures 
+    that hold relevant dynamic linking information.
+    
+    This function processes the .dynamic section.
+    */
+    
+    var dynamic = null;
+    
+    for(var i = 0; i < this.elf_shdr.length; i++){
+        if(this.elf_shdr[i].sh_type == "SHT_DYNAMIC"){
+            dynamic = this.elf_shdr[i];
+        }
+    }
+    
+    // check if dynamic section even exists, if not, return null
+    if(dynamic == null){
+        return null;
+    }
+    
+    // get number of entries in symtable
+    var dynamic_entries_number = dynamic.sh_size / dynamic.sh_entsize;
+    
+    var dynamic_entries = [];
+    
+    for(var dynamic_entry_count = 0; dynamic_entry_count < dynamic_entries_number; dynamic_entry_count++){
+        
+        // calculate offset
+        var dynamic_offset = dynamic.sh_offset + (dynamic_entry_count * dynamic.sh_entsize);
+        
+        /*
+        The d_tag member controls the interpretation of the d_un entry
+        */
+        const d_tag = elf_dynamic.d_tag[elfFile.getBigInt64(dynamic_offset, this.is_lsb)];
+        dynamic_offset += this.data_types.Elf_Sxword;
+
+        const d_un = Number(elfFile.getBigUint64(dynamic_offset, this.is_lsb));
+        dynamic_offset += this.data_types.Elf_Xword;
+
+        var dynamic_entry = {
+            d_tag : d_tag,
+            d_un : d_un
+        }
+
+        dynamic_entries.push(dynamic_entry);
+        
+    }
+    
+    return dynamic_entries;
+    
+}
+
 ELF.prototype.processElfDynSymtab32 = function(elfFile){
     
 }
 
 ELF.prototype.processElfDynSymtab64 = function(elfFile){
-    
+    return this.processElfSymbolTables(elfFile, "SHT_DYNSYM");
 }
 
 ELF.prototype.processElfSymtab32 = function(elfFile){
@@ -519,6 +578,11 @@ ELF.prototype.processElfSymtab32 = function(elfFile){
 }
 
 ELF.prototype.processElfSymtab64 = function(elfFile){
+    return this.processElfSymbolTables(elfFile, "SHT_SYMTAB");
+    
+}
+
+ELF.prototype.processElfSymbolTables = function(elfFile, symbol_table_type) {
     
     var symtab = null;
     var strtab_offset = 0; // strtab used for symtab st_name
@@ -527,12 +591,15 @@ ELF.prototype.processElfSymtab64 = function(elfFile){
     // to my knowledge, there no other way but to check for sh_type SHT_SYMTAB
     // to get symbol table 
     for(var i = 0; i < this.elf_shdr.length; i++){
-        if(this.elf_shdr[i].sh_type == "SHT_SYMTAB"){
+        if(this.elf_shdr[i].sh_type == symbol_table_type){
             symtab = this.elf_shdr[i];
             strtab_offset = this.elf_shdr[symtab.sh_link].sh_offset;
-
+            
         }
     }
+
+    // todo look in dynamic where symtab is
+
     // Handle if no symtab section present (e.g. if not compiled with -g flag in gcc)
     if(symtab == null){
         return null;
@@ -540,13 +607,13 @@ ELF.prototype.processElfSymtab64 = function(elfFile){
     
     // check if sh_size is 0 or sh_size is greater than entire file size, if yes, abort
     if(symtab.sh_size == 0 || symtab.sh_size > this.file_length){
-        const err = new Error(".symtab section size error: " + symtab.sh_size);
+        const err = new Error("symbol table section size error: " + symtab.sh_size);
         return err;
     }
     
     // check if sh_entsize is 0 or if sh_entsize is greater than sh_size, if yes, abort
     if(symtab.sh_entsize == 0 || symtab.sh_entsize > symtab.sh_size){
-        const err = new Error(".symtab section table member size error: " + symtab.sh_entsize);
+        const err = new Error("symbol table section table member size error: " + symtab.sh_entsize);
         return err;
     }
     
@@ -607,14 +674,16 @@ ELF.prototype.processElfSymtab64 = function(elfFile){
         */
         const st_shndx = elfFile.getUint16(symtab_offset, this.is_lsb);
         symtab_offset += this.data_types.Elf_Half;
-
-
+        
+        
         /*
         This member gives the value of the associated symbol.
+        This actually points to the address of that symbol if the
+        st_type is of FUNC
         */
         const st_value = Number(elfFile.getBigUint64(symtab_offset, this.is_lsb));
         symtab_offset += this.data_types.Elf_Addr;
-
+        
         /*
         Many symbols have associated sizes. This member holds zero if the symbol has no size or an unknown size.
         */
@@ -667,6 +736,10 @@ ELF.prototype.processElfPhdr = function(elfFile) {
 
 ELF.prototype.processElfShdr = function(elfFile) {
     return this.processByClass('processElfShdr', elfFile);
+};
+
+ELF.prototype.processElfDyn = function(elfFile) {
+    return this.processByClass('processElfDyn', elfFile);
 };
 
 ELF.prototype.processElfSymtab = function(elfFile) {
