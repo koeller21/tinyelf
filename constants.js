@@ -45,36 +45,36 @@ const e_ident = {
     
     /* File class */
     EI_CLASS: {
-        0: "ELFCLASSNONE",  /* Invalid class */
-        1: "ELFCLASS32",    /* 32-bit objects */
-        2: "ELFCLASS64"     /* 64-bit objects */
+        0 : "ELFCLASSNONE",  /* Invalid class */
+        1 : "ELFCLASS32",    /* 32-bit objects */
+        2 : "ELFCLASS64"     /* 64-bit objects */
     },
     /* Data encoding */
     EI_DATA: {
-        0: "ELFDATANONE", /* Invalid data encoding */
-        1: "ELFDATA2LSB", /* 2's complement, little endian */
-        2: "ELFDATA2MSB"  /* 2's complement, big endian */
+        0 : "ELFDATANONE", /* Invalid data encoding */
+        1 : "ELFDATA2LSB", /* 2's complement, little endian */
+        2 : "ELFDATA2MSB"  /* 2's complement, big endian */
     },
     /* File version */
     EI_VERSION: {
-        0: "EV_NONE",
-        1: "EV_CURRENT"
+        0 : "EV_NONE",
+        1 : "EV_CURRENT"
     },
     /* Operating System/ABI indication */
     EI_OSABI: {
-        0: "ELFOSABI_NONE",             /* UNIX System V ABI */
-        1: "ELFOSABI_HPUX",             /* HP-UX operating system */
-        2: "ELFOSABI_NETBSD",           /* NetBSD */
-        3: "ELFOSABI_LINUX",            /* GNU and LINUX */
-        4: "UNKNOWN",
-        5: "UNKNOWN",
-        6: "ELFOSABI_SOLARIS",          /* Solaris */
-        7: "ELFOSABI_AIX",              /* AIX */
-        8: "ELFOSABI_IRIX",             /* IRIX */
-        9: "ELFOSABI_FREEBSD",          /* FreeBSD */
-        10: "ELFOSABI_TRU64",           /* TRU64 UNIX */
-        11: "ELFOSABI_MODESTO",         /* Novell Modesto */
-        12: "ELFOSABI_OPENBSD",         /* OpenBSD */
+        0 : "ELFOSABI_NONE",             /* UNIX System V ABI */
+        1 : "ELFOSABI_HPUX",             /* HP-UX operating system */
+        2 : "ELFOSABI_NETBSD",           /* NetBSD */
+        3 : "ELFOSABI_LINUX",            /* GNU and LINUX */
+        4 : "UNKNOWN",
+        5 : "UNKNOWN",
+        6 : "ELFOSABI_SOLARIS",          /* Solaris */
+        7 : "ELFOSABI_AIX",              /* AIX */
+        8 : "ELFOSABI_IRIX",             /* IRIX */
+        9 : "ELFOSABI_FREEBSD",          /* FreeBSD */
+        10 : "ELFOSABI_TRU64",           /* TRU64 UNIX */
+        11 : "ELFOSABI_MODESTO",         /* Novell Modesto */
+        12 : "ELFOSABI_OPENBSD",         /* OpenBSD */
         13 : "ELFOSABI_OPENVMS",        /* OpenVMS */
         14 : "ELFOSABI_NSK",            /* Hewlett-Packard Non-Stop Kernel */
         15 : "ELFOSABI_AROS",           /* AROS */
@@ -87,7 +87,7 @@ const e_ident = {
         65 : "ELFOSABI_AMDGPU_PAL",     /* AMD PAL Runtime */
         65 : "ELFOSABI_ARM_FDPIC",      /* ARM FDPIC */
         66 : "ELFOSABI_AMDGPU_MESA3D",  /* AMD Mesa3D Runtime */
-        97: "ELFOSABI_ARM",             /* ARM */
+        97 : "ELFOSABI_ARM",             /* ARM */
         255: "ELFOSABI_STANDALONE"      /* Standalone (embedded) application */
     }
     

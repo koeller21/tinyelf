@@ -1,0 +1,23 @@
+body{
+    font-size: 0.75rem;
+}
+.main-grid{
+    grid-template-columns: 1fr 2fr;
+}
+
+.hex-table {
+    border-collapse: collapse;
+    font-family: monospace;
+  }
+
+  .hex-table th,
+  .hex-table td {
+    border: 1px solid #ccc;
+    padding: 2px 4px;
+    text-align: center;
+  }
+
+  .hex-table th {
+    /* background-color: #f2f2f2; */
+    font-weight: bold;
+  }

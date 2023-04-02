@@ -1,9 +1,11 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="dark">
 <head>
-    <script src="script.js"></script>
+    <script src="elf.js"></script>
+    <script src="main.js"></script>
     <script src="constants.js"></script>
     <link rel="stylesheet" href="pico.min.css">
+    <link rel="stylesheet" href="style.css">
     
     
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -11,25 +13,54 @@
 </head>
 <body>
     <div class="container-fluid">
-        <hgroup>
-            <h1>
-                &#129501; elfparse
-            </h1>
-            <h2>
-                ELF-Binary analysis right in your browser - no elfing problem! <br>
-                <small>
-                    <a href="" target="_blank">[Features]</a>
-                    <a href="https://github.com/koeller21/elfparse" target="_blank">[Source @ github]</a>
-                </small>
-            </h2>
-        </hgroup>
+        <div class="grid main-grid">
+            <div>
+                <hgroup>
+                    <h3>
+                        <div class="grid">
+                            &#129501; elfparse
+                            
+                        </div>
+                    </h3>
+                    <h4>
+                        <small>
+                            ELF-Binary analysis right in your browser <br/> 
+                            <span style="font-size: small;">
+                                <em>Written in pure Javascript</em> 
+                                <a href="https://github.com/koeller21/elfparse" target="_blank">[Source @ github]</a>
+                            </span>
+                        </small>
+                    </h4>
+                </hgroup>
+                
+                <label>
+                    Upload your ELF-Binary here:
+                    <input type="file" id="input" />
+                </label>
+                
+                <details>
+                    <summary>ELF Security</summary>
+                </details>
+                
+                <details>
+                    <summary>ELF Header</summary>
+                </details>
+                
+                <details>
+                    <summary>Program Header</summary>
+                </details>
+                
+                <details>
+                    <summary>Section Header</summary>
+                </details>
+            </div>
+            <div>
+                <span id="hexTable"></span>
+            </div>
+        </div>
+
     </div>
-    <div class="container-fluid">
-        <label>
-            Upload your ELF-Binary here:
-            <input type="file" id="input" />
-        </label>
-    </div>
+    
     
 </body>
 </html>
