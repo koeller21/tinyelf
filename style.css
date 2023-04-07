@@ -8,16 +8,45 @@ body{
 .hex-table {
     border-collapse: collapse;
     font-family: monospace;
-  }
+}
 
-  .hex-table th,
-  .hex-table td {
+.hex-table th,
+.hex-table td {
     border: 1px solid #ccc;
     padding: 2px 4px;
     text-align: center;
-  }
+}
 
-  .hex-table th {
-    /* background-color: #f2f2f2; */
+.hex-table th {
     font-weight: bold;
-  }
+}
+
+.hex-table a {
+    /* color: inherit; */
+    /* text-decoration: none; */
+}
+
+.hex-table .byte-container {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    /* width: 48px; */
+}
+
+.hex-table .hex-value {
+    display: inline-block;
+}
+
+.hex-table .field-name {
+    font-size: 0.5em;
+    font-weight: 600;
+}
+
+.hex-table .hex-values-cell {
+    position: relative;
+}
+
+.hex-table td span {
+    position: relative;
+    z-index: 1;
+}

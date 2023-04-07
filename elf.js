@@ -30,12 +30,14 @@ ELF.prototype.parseELF = function(arrayBuffer){
     this.data_types = this.is_64 ? elf_base_types[64] : elf_base_types[32];
     
     this.elf_contents = {}
+    this.elf_contents.e_ident = this.e_ident;
     this.elf_contents.elf_hdr = this.processElfHdr()
+    this.elf_contents.elf_phdr = this.processElfPhdr()
     this.elf_contents.elf_shdr = this.processElfShdr();
     this.elf_contents.elf_dyn = this.processElfDyn();
     this.elf_contents.elf_symtab = this.processElfSymtab();
     this.elf_contents.elf_dynsymtab = this.processElfDynSymtab();
-
+    
     
 };
 
@@ -51,7 +53,8 @@ ELF.prototype.processEIdent = function(){
         raw_dec : this.elfFile.getUint8(eident_offset).toString(),
         raw_hex : this.elfFile.getUint8(eident_offset).toString(16),
         size_bytes : 1,
-        offset : eident_offset
+        offset : eident_offset,
+        name : "EI_MAG0"
     };
     // move forward one byte in the e_ident array
     eident_offset += 1; 
@@ -64,7 +67,8 @@ ELF.prototype.processEIdent = function(){
         raw_dec : this.elfFile.getUint8(eident_offset).toString(),
         raw_hex : this.elfFile.getUint8(eident_offset).toString(16),
         size_bytes : 1,
-        offset : eident_offset
+        offset : eident_offset,
+        name : "EI_MAG1"
     };
     eident_offset += 1;
     
@@ -76,7 +80,8 @@ ELF.prototype.processEIdent = function(){
         raw_dec : this.elfFile.getUint8(eident_offset).toString(),
         raw_hex : this.elfFile.getUint8(eident_offset).toString(16),
         size_bytes : 1,
-        offset : eident_offset
+        offset : eident_offset,
+        name : "EI_MAG2"
     };
     eident_offset += 1;
     
@@ -88,7 +93,8 @@ ELF.prototype.processEIdent = function(){
         raw_dec : this.elfFile.getUint8(eident_offset).toString(),
         raw_hex : this.elfFile.getUint8(eident_offset).toString(16),
         size_bytes : 1,
-        offset : eident_offset
+        offset : eident_offset,
+        name : "EI_MAG3"
     };
     eident_offset += 1;
     
@@ -113,7 +119,8 @@ ELF.prototype.processEIdent = function(){
         raw_dec : this.elfFile.getUint8(eident_offset).toString(),
         raw_hex : this.elfFile.getUint8(eident_offset).toString(16),
         size_bytes : 1,
-        offset : eident_offset
+        offset : eident_offset,
+        name : "EI_CLASS"
     };
     eident_offset += 1;
     
@@ -131,7 +138,8 @@ ELF.prototype.processEIdent = function(){
         raw_dec : this.elfFile.getUint8(eident_offset).toString(),
         raw_hex : this.elfFile.getUint8(eident_offset).toString(16),
         size_bytes : 1,
-        offset : eident_offset
+        offset : eident_offset,
+        name : "EI_DATA"
     };
     eident_offset += 1;
     
@@ -149,7 +157,8 @@ ELF.prototype.processEIdent = function(){
         raw_dec : this.elfFile.getUint8(eident_offset).toString(),
         raw_hex : this.elfFile.getUint8(eident_offset).toString(16),
         size_bytes : 1,
-        offset : eident_offset
+        offset : eident_offset,
+        name : "EI_VERSION"
     };
     eident_offset += 1;
     
@@ -164,7 +173,8 @@ ELF.prototype.processEIdent = function(){
         raw_dec : this.elfFile.getUint8(eident_offset).toString(),
         raw_hex : this.elfFile.getUint8(eident_offset).toString(16),
         size_bytes : 1,
-        offset : eident_offset
+        offset : eident_offset,
+        name : "EI_OSABI"
     };
     eident_offset += 1;
     
@@ -180,7 +190,8 @@ ELF.prototype.processEIdent = function(){
         raw_dec : this.elfFile.getUint8(eident_offset).toString(),
         raw_hex : this.elfFile.getUint8(eident_offset).toString(16),
         size_bytes : 1,
-        offset : eident_offset
+        offset : eident_offset,
+        name : "EI_ABIVERSION"
     };
     eident_offset += 1;
     
@@ -195,8 +206,9 @@ ELF.prototype.processEIdent = function(){
         value : this.elfFile.getUint8(eident_offset),
         raw_dec : this.elfFile.getUint8(eident_offset).toString(),
         raw_hex : this.elfFile.getUint8(eident_offset).toString(16),
-        size_bytes : 1,
-        offset : eident_offset
+        size_bytes : 6, //its actually just one byte but we need this for padding up to offset 15
+        offset : eident_offset,
+        name : "EI_PAD"
     };
     eident_offset = 15;
     
@@ -208,7 +220,8 @@ ELF.prototype.processEIdent = function(){
         raw_dec : this.elfFile.getUint8(eident_offset).toString(),
         raw_hex : this.elfFile.getUint8(eident_offset).toString(16),
         size_bytes : 1,
-        offset : eident_offset
+        offset : eident_offset,
+        name : "EI_NIDENT"
     };
     
     
@@ -237,16 +250,37 @@ ELF.prototype.processElfHdr64 = function(){
     var hdr_offset = 16;
     
     /* This member of the structure identifies the object file type */
-    const e_type = elf_hdr.e_type[this.elfFile.getUint16(hdr_offset, this.is_lsb)];
+    const e_type = {
+        value : elf_hdr.e_type[this.elfFile.getUint16(hdr_offset, this.is_lsb)],
+        raw_dec : this.elfFile.getUint16(hdr_offset, this.is_lsb).toString(),
+        raw_hex : this.elfFile.getUint16(hdr_offset, this.is_lsb).toString(16),
+        size_bytes : this.data_types.Elf_Half,
+        offset : hdr_offset,
+        name : "e_type"
+    };
     hdr_offset += this.data_types.Elf_Half;
     
     
     /* This member of the structure identifies the object file type */
-    const e_machine = elf_hdr.e_machine[this.elfFile.getUint16(hdr_offset, this.is_lsb)];
+    const e_machine = {
+        value : elf_hdr.e_machine[this.elfFile.getUint16(hdr_offset, this.is_lsb)],
+        raw_dec : this.elfFile.getUint16(hdr_offset, this.is_lsb).toString(),
+        raw_hex : this.elfFile.getUint16(hdr_offset, this.is_lsb).toString(16),
+        size_bytes : this.data_types.Elf_Half,
+        offset : hdr_offset,
+        name : "e_machine"
+    };
     hdr_offset += this.data_types.Elf_Half;
     
     /* This member of the structure identifies the object file type */
-    const e_version = elf_hdr.e_version[this.elfFile.getUint32(hdr_offset, this.is_lsb)]; 
+    const e_version = {
+        value : elf_hdr.e_version[this.elfFile.getUint16(hdr_offset, this.is_lsb)],
+        raw_dec : this.elfFile.getUint16(hdr_offset, this.is_lsb).toString(),
+        raw_hex : this.elfFile.getUint16(hdr_offset, this.is_lsb).toString(16),
+        size_bytes : this.data_types.Elf_Word,
+        offset : hdr_offset,
+        name : "e_version"
+    };
     hdr_offset += this.data_types.Elf_Word;
     
     /* 
@@ -254,41 +288,83 @@ ELF.prototype.processElfHdr64 = function(){
     transfers control, thus starting the process.  
     If the file has no associated entry point, this member holds zero.
     */
-    const e_entry = Number(this.elfFile.getBigUint64(hdr_offset, this.is_lsb)); 
+    const e_entry = {
+        value : Number(this.elfFile.getBigUint64(hdr_offset, this.is_lsb)),
+        raw_dec : Number(this.elfFile.getBigUint64(hdr_offset, this.is_lsb)).toString(),
+        raw_hex : Number(this.elfFile.getBigUint64(hdr_offset, this.is_lsb)).toString(16),
+        size_bytes : this.data_types.Elf_Addr,
+        offset : hdr_offset,
+        name : "e_entry"
+    };
     hdr_offset += this.data_types.Elf_Addr;
     
     /* 
     This member holds the program header table's file offset in bytes.  
     If the file has no program header table, this member holds zero. 
     */
-    const e_phoff = Number(this.elfFile.getBigUint64(hdr_offset, this.is_lsb));
+    const e_phoff = {
+        value : Number(this.elfFile.getBigUint64(hdr_offset, this.is_lsb)),
+        raw_dec : Number(this.elfFile.getBigUint64(hdr_offset, this.is_lsb)).toString(),
+        raw_hex : Number(this.elfFile.getBigUint64(hdr_offset, this.is_lsb)).toString(16),
+        size_bytes : this.data_types.Elf_Off,
+        offset : hdr_offset,
+        name : "e_phoff"
+    };
     hdr_offset += this.data_types.Elf_Off;
     
     /*
     This member holds the section header table's file offset in bytes.  
     If the file has no section header table, this member holds zero.
     */
-    const e_shoff = Number(this.elfFile.getBigUint64(hdr_offset, this.is_lsb));
+    const e_shoff = {
+        value : Number(this.elfFile.getBigUint64(hdr_offset, this.is_lsb)),
+        raw_dec : Number(this.elfFile.getBigUint64(hdr_offset, this.is_lsb)).toString(),
+        raw_hex : Number(this.elfFile.getBigUint64(hdr_offset, this.is_lsb)).toString(16),
+        size_bytes : this.data_types.Elf_Off,
+        offset : hdr_offset,
+        name : "e_shoff"
+    };
     hdr_offset += this.data_types.Elf_Off;
     
     /* 
     This member holds processor-specific flags associated with the file.  
     Flag names take the form EF_`machine_flag'.  Currently, no flags have been defined.
     */
-    const e_flags = this.elfFile.getUint32(hdr_offset, this.is_lsb);
+    const e_flags = {
+        value : this.elfFile.getUint32(hdr_offset, this.is_lsb),
+        raw_dec : this.elfFile.getUint32(hdr_offset, this.is_lsb).toString(),
+        raw_hex : this.elfFile.getUint32(hdr_offset, this.is_lsb).toString(16),
+        size_bytes : this.data_types.Elf_Word,
+        offset : hdr_offset,
+        name : "e_flags"
+    };
     hdr_offset += this.data_types.Elf_Word;
     
     /* 
     This member holds the ELF header's size in bytes.
     */
-    const e_ehsize = this.elfFile.getUint16(hdr_offset, this.is_lsb);
+    const e_ehsize = {
+        value : this.elfFile.getUint16(hdr_offset, this.is_lsb),
+        raw_dec : this.elfFile.getUint16(hdr_offset, this.is_lsb).toString(),
+        raw_hex : this.elfFile.getUint16(hdr_offset, this.is_lsb).toString(16),
+        size_bytes : this.data_types.Elf_Half,
+        offset : hdr_offset,
+        name : "e_ehsize"
+    };
     hdr_offset += this.data_types.Elf_Half;
     
     /* 
     This member holds the size in bytes of one entry in the file's program header table; 
     all entries are the same size.
     */
-    const e_phentsize = this.elfFile.getUint16(hdr_offset, this.is_lsb);
+    const e_phentsize = {
+        value : this.elfFile.getUint16(hdr_offset, this.is_lsb),
+        raw_dec : this.elfFile.getUint16(hdr_offset, this.is_lsb).toString(),
+        raw_hex : this.elfFile.getUint16(hdr_offset, this.is_lsb).toString(16),
+        size_bytes : this.data_types.Elf_Half,
+        offset : hdr_offset,
+        name : "e_phentsize"
+    };
     hdr_offset += this.data_types.Elf_Half;
     
     /* 
@@ -296,7 +372,14 @@ ELF.prototype.processElfHdr64 = function(){
     Thus the product of e_phentsize and e_phnum gives the table's size in bytes.  
     If a file has no program header,  e_phnum holds the value zero.
     */
-    var e_phnum = this.elfFile.getUint16(hdr_offset, this.is_lsb);
+    var e_phnum = {
+        value : this.elfFile.getUint16(hdr_offset, this.is_lsb),
+        raw_dec : this.elfFile.getUint16(hdr_offset, this.is_lsb).toString(),
+        raw_hex : this.elfFile.getUint16(hdr_offset, this.is_lsb).toString(16),
+        size_bytes : this.data_types.Elf_Half,
+        offset : hdr_offset,
+        name : "e_phnum"
+    };
     hdr_offset += this.data_types.Elf_Half;
     
     /*
@@ -315,7 +398,14 @@ ELF.prototype.processElfHdr64 = function(){
     A section header is one entry in the section header table; 
     all entries are the same size.
     */
-    const e_shentsize = this.elfFile.getUint16(hdr_offset, this.is_lsb);
+    const e_shentsize = {
+        value : this.elfFile.getUint16(hdr_offset, this.is_lsb),
+        raw_dec : this.elfFile.getUint16(hdr_offset, this.is_lsb).toString(),
+        raw_hex : this.elfFile.getUint16(hdr_offset, this.is_lsb).toString(16),
+        size_bytes : this.data_types.Elf_Half,
+        offset : hdr_offset,
+        name : "e_shentsize"
+    };
     hdr_offset += this.data_types.Elf_Half;
     
     /* 
@@ -323,7 +413,14 @@ ELF.prototype.processElfHdr64 = function(){
     Thus the product of e_shentsize and e_shnum gives the section header table's size in bytes.  
     If a file has  no  section header table, e_shnum holds the value of zero.
     */
-    var e_shnum = this.elfFile.getUint16(hdr_offset, this.is_lsb);
+    var e_shnum = {
+        value : this.elfFile.getUint16(hdr_offset, this.is_lsb),
+        raw_dec : this.elfFile.getUint16(hdr_offset, this.is_lsb).toString(),
+        raw_hex : this.elfFile.getUint16(hdr_offset, this.is_lsb).toString(16),
+        size_bytes : this.data_types.Elf_Half,
+        offset : hdr_offset,
+        name : "e_shnum"
+    };
     hdr_offset += this.data_types.Elf_Half;
     
     /*
@@ -341,7 +438,14 @@ ELF.prototype.processElfHdr64 = function(){
     This member holds the section header table index of the entry 
     associated with the section name string table. 
     */
-    var e_shstrndx = this.elfFile.getUint16(hdr_offset, this.is_lsb);
+    var e_shstrndx = {
+        value : this.elfFile.getUint16(hdr_offset, this.is_lsb),
+        raw_dec : this.elfFile.getUint16(hdr_offset, this.is_lsb).toString(),
+        raw_hex : this.elfFile.getUint16(hdr_offset, this.is_lsb).toString(16),
+        size_bytes : this.data_types.Elf_Half,
+        offset : hdr_offset,
+        name : "e_shstrndx"
+    };
     hdr_offset += this.data_types.Elf_Half;
     
     /*
@@ -386,17 +490,125 @@ ELF.prototype.processElfPhdr64 = function(){
     
     var phdr_entries = [];
     
-    for(var phdr_entry_count = 0; phdr_entry_count < this.elf_contents.elf_hdr.e_phnum; phdr_entry_count++){
-        var phdr_entry_offset = this.elf_contents.elf_hdr.e_phoff + phdr_entry_count * this.elf_contents.elf_hdr.e_phentsize;
+    for(var phdr_entry_count = 0; phdr_entry_count < this.elf_contents.elf_hdr.e_phnum.value; phdr_entry_count++){
         
-        const p_type = elf_phdr.p_type[this.elfFile.getUint32(phdr_entry_offset, this.is_lsb)];
-        const p_flags = this.getSetFlags(this.elfFile.getUint32(phdr_entry_offset + 4, this.is_lsb), elf_phdr.p_flags);
-        const p_offset = Number(this.elfFile.getBigUint64(phdr_entry_offset + 8, this.is_lsb));		/* Segment file offset */
-        const p_vaddr = Number(this.elfFile.getBigUint64(phdr_entry_offset + 16, this.is_lsb));		/* Segment virtual address */
-        const p_paddr = Number(this.elfFile.getBigUint64(phdr_entry_offset + 24, this.is_lsb));	    /* Segment physical address */
-        const p_filesz = Number(this.elfFile.getBigUint64(phdr_entry_offset + 32, this.is_lsb));	    /* Segment size in file */
-        const p_memsz = Number(this.elfFile.getBigUint64(phdr_entry_offset + 40, this.is_lsb));		/* Segment size in memory */
-        const p_align = Number(this.elfFile.getBigUint64(phdr_entry_offset + 48, this.is_lsb));		/* Segment alignment, file & memory */
+        var phdr_entry_offset = this.elf_contents.elf_hdr.e_phoff.value + phdr_entry_count * this.elf_contents.elf_hdr.e_phentsize.value;
+        
+        /*
+        This member of the structure indicates what kind of segment this array element 
+        describes or how to interpret the array element's information.
+        */
+        const p_type = {
+            value : elf_phdr.p_type[this.elfFile.getUint32(phdr_entry_offset, this.is_lsb)],
+            raw_dec : this.elfFile.getUint32(phdr_entry_offset, this.is_lsb).toString(),
+            raw_hex : this.elfFile.getUint32(phdr_entry_offset, this.is_lsb).toString(16),
+            size_bytes : this.data_types.Elf_Word,
+            offset : phdr_entry_offset,
+            name : "p_type"
+        };
+        phdr_entry_offset += this.data_types.Elf_Word;
+        
+        
+        /*
+        This member holds a bit mask of flags relevant to the segment:
+        */
+        const p_flags = {
+            value : this.getSetFlags(this.elfFile.getUint32(phdr_entry_offset, this.is_lsb), elf_phdr.p_flags),
+            raw_dec : this.elfFile.getUint32(phdr_entry_offset, this.is_lsb).toString(),
+            raw_hex : this.elfFile.getUint32(phdr_entry_offset, this.is_lsb).toString(16),
+            size_bytes : this.data_types.Elf_Word,
+            offset : phdr_entry_offset,
+            name : "p_flags"
+        };
+        phdr_entry_offset += this.data_types.Elf_Word;
+        
+        
+        /*
+        This member holds the offset from the beginning of the file at which the first byte of the segment resides.
+        */
+        const p_offset = {
+            value : Number(this.elfFile.getBigUint64(phdr_entry_offset, this.is_lsb)),
+            raw_dec : Number(this.elfFile.getBigUint64(phdr_entry_offset, this.is_lsb)).toString(),
+            raw_hex : Number(this.elfFile.getBigUint64(phdr_entry_offset, this.is_lsb)).toString(16),
+            size_bytes : this.data_types.Elf_Off,
+            offset : phdr_entry_offset,
+            name : "p_offset"
+        };
+        phdr_entry_offset += this.data_types.Elf_Off;
+        
+        
+        /*
+        This member holds the virtual address at which the first byte of the segment resides in memory.
+        */
+        const p_vaddr = {
+            value : Number(this.elfFile.getBigUint64(phdr_entry_offset, this.is_lsb)),
+            raw_dec : Number(this.elfFile.getBigUint64(phdr_entry_offset, this.is_lsb)).toString(),
+            raw_hex : Number(this.elfFile.getBigUint64(phdr_entry_offset, this.is_lsb)).toString(16),
+            size_bytes : this.data_types.Elf_Addr,
+            offset : phdr_entry_offset,
+            name : "p_vaddr"
+        };
+        phdr_entry_offset += this.data_types.Elf_Addr;
+        
+        
+        /*
+        On systems for which physical addressing is relevant, this member is reserved for the segment's physical address.  
+        Under BSD this member is not used and must be zero.
+        */
+        const p_paddr = {
+            value : Number(this.elfFile.getBigUint64(phdr_entry_offset, this.is_lsb)),
+            raw_dec : Number(this.elfFile.getBigUint64(phdr_entry_offset, this.is_lsb)).toString(),
+            raw_hex : Number(this.elfFile.getBigUint64(phdr_entry_offset, this.is_lsb)).toString(16),
+            size_bytes : this.data_types.Elf_Addr,
+            offset : phdr_entry_offset,
+            name : "p_paddr"
+        };
+        phdr_entry_offset += this.data_types.Elf_Addr;
+        
+        
+        /*
+        This member holds the number of bytes in the file image of the segment.  It may be zero.
+        */
+        const p_filesz = {
+            value : Number(this.elfFile.getBigUint64(phdr_entry_offset, this.is_lsb)),
+            raw_dec : Number(this.elfFile.getBigUint64(phdr_entry_offset, this.is_lsb)).toString(),
+            raw_hex : Number(this.elfFile.getBigUint64(phdr_entry_offset, this.is_lsb)).toString(16),
+            size_bytes : this.data_types.Elf_Addr,
+            offset : phdr_entry_offset,
+            name : "p_filesz"
+        };
+        phdr_entry_offset += this.data_types.Elf_Xword;
+        
+        
+        /*
+        This member holds the number of bytes in the memory image of the segment.  It may be zero.
+        */
+        const p_memsz = {
+            value : Number(this.elfFile.getBigUint64(phdr_entry_offset, this.is_lsb)),
+            raw_dec : Number(this.elfFile.getBigUint64(phdr_entry_offset, this.is_lsb)).toString(),
+            raw_hex : Number(this.elfFile.getBigUint64(phdr_entry_offset, this.is_lsb)).toString(16),
+            size_bytes : this.data_types.Elf_Addr,
+            offset : phdr_entry_offset,
+            name : "p_memsz"
+        };
+        phdr_entry_offset += this.data_types.Elf_Xword;
+        
+        
+        /*
+        This  member  holds  the  value  to which the segments are aligned in memory and in the file.  
+        Loadable process segments must have congruent values for p_vaddr and p_offset, modulo the page
+        size. Values of zero and one mean no alignment is required.
+        Otherwise, p_align should be a positive, integral power of two, and p_vaddr should equal p_offset, modulo p_align.
+        */
+        const p_align = {
+            value : Number(this.elfFile.getBigUint64(phdr_entry_offset, this.is_lsb)),
+            raw_dec : Number(this.elfFile.getBigUint64(phdr_entry_offset, this.is_lsb)).toString(),
+            raw_hex : Number(this.elfFile.getBigUint64(phdr_entry_offset, this.is_lsb)).toString(16),
+            size_bytes : this.data_types.Elf_Addr,
+            offset : phdr_entry_offset,
+            name : "p_align"
+        };
+        phdr_entry_offset += this.data_types.Elf_Xword;
         
         var phdr_entry = {
             p_type : p_type,
@@ -459,15 +671,15 @@ ELF.prototype.processElfShdr64 = function(){
     actual .shstrtab section (e.g. 0x3eb4)
     - sh_name is then just an index offset (e.g. 27) into the section header string table section
     */
-    const shstrtab_entry_offset = this.elf_contents.elf_hdr.e_shoff + this.elf_contents.elf_hdr.e_shstrndx * this.elf_contents.elf_hdr.e_shentsize;
+    const shstrtab_entry_offset = this.elf_contents.elf_hdr.e_shoff.value + this.elf_contents.elf_hdr.e_shstrndx.value * this.elf_contents.elf_hdr.e_shentsize.value;
     const shstrtab_sh_offset = Number(this.elfFile.getBigUint64(shstrtab_entry_offset + 24, this.is_lsb));
     
     var shdr_entries = [];
     
-    for(var shdr_entry_count = 0; shdr_entry_count < this.elf_contents.elf_hdr.e_shnum; shdr_entry_count++){
+    for(var shdr_entry_count = 0; shdr_entry_count < this.elf_contents.elf_hdr.e_shnum.value; shdr_entry_count++){
         
         // calculate shdr_entry offset
-        var shdr_entry_offset = this.elf_contents.elf_hdr.e_shoff + shdr_entry_count * this.elf_contents.elf_hdr.e_shentsize;
+        var shdr_entry_offset = this.elf_contents.elf_hdr.e_shoff.value + shdr_entry_count * this.elf_contents.elf_hdr.e_shentsize.value;
         
         /*
         This member specifies the name of the section. 
