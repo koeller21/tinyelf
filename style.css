@@ -21,16 +21,13 @@ body{
     font-weight: bold;
 }
 
-.hex-table a {
-    /* color: inherit; */
-    /* text-decoration: none; */
-}
+
 
 .hex-table .byte-container {
     display: inline-flex;
     flex-direction: column;
     align-items: center;
-    /* width: 48px; */
+
 }
 
 .hex-table .hex-value {
@@ -42,6 +39,10 @@ body{
     font-weight: 600;
 }
 
+.hex-table .value-name {
+    font-size: 0.7em;
+}
+
 .hex-table .hex-values-cell {
     position: relative;
 }
@@ -49,4 +50,14 @@ body{
 .hex-table td span {
     position: relative;
     z-index: 1;
+}
+
+#menu table{
+    margin-left: 1.0rem;
+}
+
+#menu table td{
+    padding:0;
+    border-bottom: 0;
+    font-size: 0.6em;
 }

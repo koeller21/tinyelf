@@ -294,7 +294,8 @@ ELF.prototype.processElfHdr64 = function(){
         raw_hex : Number(this.elfFile.getBigUint64(hdr_offset, this.is_lsb)).toString(16),
         size_bytes : this.data_types.Elf_Addr,
         offset : hdr_offset,
-        name : "e_entry"
+        name : "e_entry",
+        action_type : "link"
     };
     hdr_offset += this.data_types.Elf_Addr;
     
@@ -308,7 +309,8 @@ ELF.prototype.processElfHdr64 = function(){
         raw_hex : Number(this.elfFile.getBigUint64(hdr_offset, this.is_lsb)).toString(16),
         size_bytes : this.data_types.Elf_Off,
         offset : hdr_offset,
-        name : "e_phoff"
+        name : "e_phoff",
+        action_type : "link"
     };
     hdr_offset += this.data_types.Elf_Off;
     
@@ -322,7 +324,8 @@ ELF.prototype.processElfHdr64 = function(){
         raw_hex : Number(this.elfFile.getBigUint64(hdr_offset, this.is_lsb)).toString(16),
         size_bytes : this.data_types.Elf_Off,
         offset : hdr_offset,
-        name : "e_shoff"
+        name : "e_shoff",
+        action_type : "link"
     };
     hdr_offset += this.data_types.Elf_Off;
     
@@ -687,13 +690,27 @@ ELF.prototype.processElfShdr64 = function(){
         giving the location of a null-terminated string.
         */
         const sh_name_offset = this.elfFile.getUint32(shdr_entry_offset, this.is_lsb);
-        const sh_name = this.getSectionHeaderString(shstrtab_sh_offset + sh_name_offset);
+        const sh_name = {
+            value : this.getSectionHeaderString(shstrtab_sh_offset + sh_name_offset),
+            raw_dec : this.elfFile.getUint32(shdr_entry_offset, this.is_lsb).toString(),
+            raw_hex : this.elfFile.getUint32(shdr_entry_offset, this.is_lsb).toString(16),
+            size_bytes : this.data_types.Elf_Word,
+            offset : shdr_entry_offset,
+            name : "sh_name"
+        };
         shdr_entry_offset += this.data_types.Elf_Word;
         
         /*
         This member categorizes the section's contents and semantics.
         */
-        const sh_type = elf_shdr.sh_type[this.elfFile.getUint32(shdr_entry_offset, this.is_lsb)];
+        const sh_type = {
+            value : elf_shdr.sh_type[this.elfFile.getUint32(shdr_entry_offset, this.is_lsb)],
+            raw_dec : this.elfFile.getUint32(shdr_entry_offset, this.is_lsb).toString(),
+            raw_hex : this.elfFile.getUint32(shdr_entry_offset, this.is_lsb).toString(16),
+            size_bytes : this.data_types.Elf_Word,
+            offset : shdr_entry_offset,
+            name : "sh_type"
+        };
         shdr_entry_offset += this.data_types.Elf_Word;
         
         /*
@@ -702,7 +719,14 @@ ELF.prototype.processElfShdr64 = function(){
         Otherwise, the attribute is "off"  or  does not apply.  
         Undefined attributes are set to zero.
         */
-        const sh_flags = this.getSetFlags(this.elfFile.getUint32(shdr_entry_offset, this.is_lsb), elf_shdr.sh_flags);
+        const sh_flags = {
+            value : this.getSetFlags(this.elfFile.getUint32(shdr_entry_offset, this.is_lsb), elf_shdr.sh_flags),
+            raw_dec : this.elfFile.getUint32(shdr_entry_offset, this.is_lsb).toString(),
+            raw_hex : this.elfFile.getUint32(shdr_entry_offset, this.is_lsb).toString(16),
+            size_bytes : this.data_types.Elf_Xword,
+            offset : shdr_entry_offset,
+            name : "sh_flags"
+        };
         shdr_entry_offset += this.data_types.Elf_Xword;
         
         /*
@@ -711,7 +735,14 @@ ELF.prototype.processElfShdr64 = function(){
         Otherwise, the member contains zero.
         */
         
-        const sh_addr = Number(this.elfFile.getBigUint64(shdr_entry_offset, this.is_lsb));
+        const sh_addr = {
+            value : Number(this.elfFile.getBigUint64(shdr_entry_offset, this.is_lsb)),
+            raw_dec : Number(this.elfFile.getBigUint64(shdr_entry_offset, this.is_lsb)).toString(),
+            raw_hex : Number(this.elfFile.getBigUint64(shdr_entry_offset, this.is_lsb)).toString(16),
+            size_bytes : this.data_types.Elf_Addr,
+            offset : shdr_entry_offset,
+            name : "sh_addr"
+        };
         shdr_entry_offset += this.data_types.Elf_Addr;
         
         /*
@@ -719,7 +750,14 @@ ELF.prototype.processElfShdr64 = function(){
         the first byte in the section. One section type, SHT_NOBITS, occupies no space 
         in the file, and its sh_offset member locates the conceptual placement in the file.
         */
-        const sh_offset = Number(this.elfFile.getBigUint64(shdr_entry_offset, this.is_lsb));
+        const sh_offset = {
+            value : Number(this.elfFile.getBigUint64(shdr_entry_offset, this.is_lsb)),
+            raw_dec : Number(this.elfFile.getBigUint64(shdr_entry_offset, this.is_lsb)).toString(),
+            raw_hex : Number(this.elfFile.getBigUint64(shdr_entry_offset, this.is_lsb)).toString(16),
+            size_bytes : this.data_types.Elf_Off,
+            offset : shdr_entry_offset,
+            name : "sh_offset"
+        };
         shdr_entry_offset += this.data_types.Elf_Off;
         
         /*
@@ -727,19 +765,40 @@ ELF.prototype.processElfShdr64 = function(){
         the section occupies sh_size bytes in the file. A section of type SHT_NOBITS may have a nonzero size,
         but it occupies no space in the file.
         */
-        const sh_size = Number(this.elfFile.getBigUint64(shdr_entry_offset, this.is_lsb));
+        const sh_size = {
+            value : Number(this.elfFile.getBigUint64(shdr_entry_offset, this.is_lsb)),
+            raw_dec : Number(this.elfFile.getBigUint64(shdr_entry_offset, this.is_lsb)).toString(),
+            raw_hex : Number(this.elfFile.getBigUint64(shdr_entry_offset, this.is_lsb)).toString(16),
+            size_bytes : this.data_types.Elf_Xword,
+            offset : shdr_entry_offset,
+            name : "sh_size"
+        };
         shdr_entry_offset += this.data_types.Elf_Xword;
         
         /*
         This member holds a section header table index link, whose interpretation depends on the section type.
         */
-        const sh_link = this.elfFile.getUint32(shdr_entry_offset, this.is_lsb);
+        const sh_link = {
+            value : this.elfFile.getUint32(shdr_entry_offset, this.is_lsb),
+            raw_dec : this.elfFile.getUint32(shdr_entry_offset, this.is_lsb).toString(),
+            raw_hex : this.elfFile.getUint32(shdr_entry_offset, this.is_lsb).toString(16),
+            size_bytes : this.data_types.Elf_Word,
+            offset : shdr_entry_offset,
+            name : "sh_link"
+        };
         shdr_entry_offset += this.data_types.Elf_Word;
         
         /*
         This member holds extra information, whose interpretation depends on the section type.
         */
-        const sh_info = this.elfFile.getUint32(shdr_entry_offset, this.is_lsb);
+        const sh_info = {
+            value : this.elfFile.getUint32(shdr_entry_offset, this.is_lsb),
+            raw_dec : this.elfFile.getUint32(shdr_entry_offset, this.is_lsb).toString(),
+            raw_hex : this.elfFile.getUint32(shdr_entry_offset, this.is_lsb).toString(16),
+            size_bytes : this.data_types.Elf_Word,
+            offset : shdr_entry_offset,
+            name : "sh_info"
+        };
         shdr_entry_offset += this.data_types.Elf_Word;
         
         /*
@@ -749,7 +808,14 @@ ELF.prototype.processElfShdr64 = function(){
         Only zero and positive integral powers of two are allowed. 
         The value 0 or 1 means that the section has no alignment constraints.
         */
-        const sh_addralign = Number(this.elfFile.getBigUint64(shdr_entry_offset, this.is_lsb));
+        const sh_addralign = {
+            value : Number(this.elfFile.getBigUint64(shdr_entry_offset, this.is_lsb)),
+            raw_dec : Number(this.elfFile.getBigUint64(shdr_entry_offset, this.is_lsb)).toString(),
+            raw_hex : Number(this.elfFile.getBigUint64(shdr_entry_offset, this.is_lsb)).toString(16),
+            size_bytes : this.data_types.Elf_Xword,
+            offset : shdr_entry_offset,
+            name : "sh_addralign"
+        };
         shdr_entry_offset += this.data_types.Elf_Xword;
         
         /*
@@ -758,7 +824,14 @@ ELF.prototype.processElfShdr64 = function(){
         This member contains zero if the section
         does not hold a table of fixed-size entries.
         */
-        const sh_entsize = Number(this.elfFile.getBigUint64(shdr_entry_offset, this.is_lsb));
+        const sh_entsize = {
+            value : Number(this.elfFile.getBigUint64(shdr_entry_offset, this.is_lsb)),
+            raw_dec : Number(this.elfFile.getBigUint64(shdr_entry_offset, this.is_lsb)).toString(),
+            raw_hex : Number(this.elfFile.getBigUint64(shdr_entry_offset, this.is_lsb)).toString(16),
+            size_bytes : this.data_types.Elf_Xword,
+            offset : shdr_entry_offset,
+            name : "sh_entsize"
+        };
         shdr_entry_offset += this.data_types.Elf_Xword;
         
         
@@ -1046,6 +1119,9 @@ ELF.prototype.getSetFlags = function(bitmask, flags) {
 
 ELF.prototype.run = function(file){
     
+    this.file_name = file.name;
+    this.file_last_modified = file.lastModified;
+
     return this.loadFile(file).then((arrayBuffer) => {
         this.parseELF(arrayBuffer);
         return this;

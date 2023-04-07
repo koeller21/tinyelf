@@ -2,18 +2,21 @@ function printHexValues(dataView, addressToPartMapping) {
     const length = dataView.byteLength;
     
     var table = "<table class='hex-table'>";
-    table += "<tr><th>Address</th><th>Hex Bytes</th><th>ASCII Characters</th></tr>";
+    table += `<tr><td colspan="3">ELF File Content</td></tr>`;
+    table += "<tr><th>Offset</th><th>Hex</th><th>ASCII</th></tr>";
     
-    for(var address = 0; address <= 784; address += 16 ){
-
+    for(var address = 0; address <= length; address += 8 ){
+        
         var hexValuesRow = "";
         var asciiValuesRow = "";
-
         
-        for(var offset = address; offset < address+16; offset += addressToPartMapping[offset].size_bytes){
+        // console.log(address);
+        
+        for(var offset = address; offset < address+7; offset += addressToPartMapping[offset].size_bytes){
             
             var part = addressToPartMapping[offset];
-
+            // console.log(part);
+            
             if(!part){
                 break;
             }
@@ -23,27 +26,49 @@ function printHexValues(dataView, addressToPartMapping) {
             var asciiValue = "";
             for(var i = 0; i < part.size_bytes; i++){
                 hexValue += dataView.getUint8(offset + i).toString(16).padStart(2, "0");
+                
                 asciiChar = dataView.getUint8(offset + i);
                 asciiValue += (asciiChar >= 32 && asciiChar <= 126) ? String.fromCharCode(asciiChar) : ".";
             }
-
-            if(typeof part.value == 'number'){
-                value = "Value: " + part.raw_dec + " / 0x" + part.raw_hex;
+            
+            
+            
+            var value = "";
+            if(part.action_type == "link"){
+                var peek = "";
+                if(addressToPartMapping[parseInt(part.raw_dec)] != null){
+                    var peek = `<span style="color:#00897b;"> &larr; ${addressToPartMapping[parseInt(part.raw_dec)].name}:${addressToPartMapping[parseInt(part.raw_dec)].value} </span>`;
+                }
+                var value = `<a href="#${part.raw_hex.padStart(8, "0")}">${part.raw_hex.padStart(8, "0")}</a> ${peek}`;
             }else{
-                value = part.value;
+                
+                if(typeof part.value == 'number'){
+                    value = `<span style="color:#00897b;">0x${part.raw_hex}</span>`;
+                }else{
+                    value = `<span style="color:#00897b;">${part.value}</span>`;
+                }
+                
             }
             
-            hexValuesRow += `<a href="#${part.name}" class="byte-container" data-tooltip="${value}"><span class="hex-value">${hexValue}</span><span class="field-name">${part.name}</span></a>`;
+            hexValuesRow += `<span class="byte-container" >
+            <span class="hex-value">${hexValue}</span>
+            <span class="value-name">${value}</span>
+            <span class="field-name">${part.name}</span>
+            </span>`;
             hexValuesRow += " ";
-
+            
             asciiValuesRow += asciiValue;
-
+            
             
         }
         
         // Append a row to the table with the address, hex values, and ASCII values
         table += `<tr>
-        <td>${offset.toString(16).padStart(8, "0")}</td>
+        <td>
+        <a id="${address.toString(16).padStart(8, "0")}">
+        ${address.toString(16).padStart(8, "0")}
+        </a>
+        </td>
         <td class="hex-values-cell">${hexValuesRow}</td>
         <td>${asciiValuesRow}</td>
         </tr>`;
@@ -55,124 +80,7 @@ function printHexValues(dataView, addressToPartMapping) {
     return table;
 }
 
-// function printHexValues(dataView, addressToPartMapping) {
-//     const length = dataView.byteLength;
 
-//     var table = "<table class='hex-table'>";
-//     table += "<tr><th>Address</th><th>Hex Bytes</th><th>ASCII Characters</th></tr>";
-
-//     for (var address = 0; address < 785; address += 16) {
-//         var hexValuesRow = "";
-//         var asciiValuesRow = "";
-
-//         for (var offset = 0; offset < 16; offset += addressToPartMapping[offset].size_bytes) {
-//             var currentAddress = address + offset;
-
-//             // Stop processing if current address exceeds the dataView length
-//             if (currentAddress >= length) {
-//                 break;
-//             }
-
-//             console.log(currentAddress);
-
-//             var part = addressToPartMapping[currentAddress];
-//             var hexValue = dataView.getUint8(currentAddress).toString(16).padStart(2, "0");
-//             var asciiChar = dataView.getUint8(currentAddress);
-//             var asciiValue = (asciiChar >= 32 && asciiChar <= 126) ? String.fromCharCode(asciiChar) : ".";
-
-//             if (part && offset === part.offset % 16) {
-//                 hexValuesRow += `<a href="#${part.name}" class="byte-container"><span class="hex-value">${hexValue}</span><span class="field-name">${part.name}</span></a>`;
-//             } else {
-//                 hexValuesRow += `<span class="byte-container"><span class="hex-value">${hexValue}</span></span>`;
-//             }
-
-//             hexValuesRow += " ";
-//             asciiValuesRow += asciiValue;
-//         }
-
-//         // Append a row to the table with the address, hex values, and ASCII values
-//         table += `<tr>
-//         <td>${address.toString(16).padStart(8, "0")}</td>
-//         <td class="hex-values-cell">${hexValuesRow}</td>
-//         <td>${asciiValuesRow}</td>
-//         </tr>`;
-//     }
-
-//     table += "</table>";
-
-//     return table;
-// }
-
-/*
-for (var address = 0; address < length; address += 16) {
-    var hexValuesRow = "";
-    var asciiValuesRow = "";
-    
-    for (var offset = 0; offset < 16; offset += 2) {
-        if (address + offset < length) {
-            
-            const part = addressToPartMapping[address + offset];
-            if(part == null){
-                continue;
-            }
-            
-            var hexValue = "";
-            var asciiChar = 0;
-            var asciiValue = "";
-            for(var i = 0; i < part.size_bytes; i++){
-                hexValue += dataView.getUint8(address + offset + i).toString(16).padStart(2, "0");
-                asciiChar = dataView.getUint8(address + offset + i);
-                asciiValue += (asciiChar >= 32 && asciiChar <= 126) ? String.fromCharCode(asciiChar) : ".";
-                
-                
-            }
-            
-            // const hexValue1 = dataView.getUint8(address + offset).toString(16).padStart(2, "0");
-            // const hexValue2 = dataView.getUint8(address + offset + 1).toString(16).padStart(2, "0");
-            
-            // const asciiChar1 = dataView.getUint8(address + offset);
-            // const asciiChar2 = dataView.getUint8(address + offset + 1);
-            // const asciiValue1 = (asciiChar1 >= 32 && asciiChar1 <= 126) ? String.fromCharCode(asciiChar1) : ".";
-            // const asciiValue2 = (asciiChar2 >= 32 && asciiChar2 <= 126) ? String.fromCharCode(asciiChar2) : ".";
-            console.log("=========");
-            console.log(part);
-            console.log(part.name);
-            console.log(part.size_bytes);
-            console.log(hexValue);
-            console.log(asciiValue);
-            console.log(offset);
-            console.log(part.offset);
-            
-            // Generate a hyperlink to the corresponding ELF file part
-            // if (part && offset === part.offset % 16) {
-            // hexValues += `<a href="#${part.name}" class="byte-container"><span class="hex-value">${hexValue}</span><span class="field-name">${part.name}</span></a>`;
-            // } else {
-            // hexValues += `<span class="byte-container"><span class="hex-value">${hexValue}</span></span>`;
-            // }
-            if(part){
-                hexValuesRow += `<a href="#${part.name}" class="byte-container"><span class="hex-value">${hexValue}</span><span class="field-name">${part.name}</span></a>`;
-            }
-            
-            
-            
-            hexValuesRow += " ";
-            // asciiValues += asciiValue1 + asciiValue2;
-        }
-    }
-    
-    // Append a row to the table with the address, hex values, and ASCII values
-    table += `<tr>
-    <td>${address.toString(16).padStart(8, "0")}</td>
-    <td class="hex-values-cell">${hexValuesRow}</td>
-    <td>${asciiValuesRow}</td>
-    </tr>`;
-}
-
-table += "</table>";
-
-return table;
-}
-*/
 
 /**
 * Creates an HTML table with the hexadecimal representation of an ELF file's contents,
@@ -241,6 +149,85 @@ function create_table(parsed_elf) {
     document.getElementById("hexTable").innerHTML = printHexValues(parsed_elf.elfFile, addressToPartMapping);
 }
 
+function create_prologue(parsed_elf){
+    
+    
+    var table = "<table class='hex-table'>";
+    table += `<tr><td colspan="4">Meta Information</td></tr>`;
+    table += `<tr><td>Program Name:</td><td colspan="3" style="font-weight:bold;">${parsed_elf.file_name}</td></tr>`;
+    table += `<tr><td>File Length:</td><td colspan="3">${parsed_elf.file_length} Bytes / ${Number(parsed_elf.file_length/1000/1000).toFixed(5)} MB</td></tr>`;
+    table += `<tr><td>File Last Modified:</td><td colspan="3">${new Date(parsed_elf.file_last_modified).toLocaleString()}</td></tr>`;
+    table += `<tr>
+    <td>${parsed_elf.elf_contents.elf_hdr.e_type.value}</td>
+    <td>${parsed_elf.elf_contents.elf_hdr.e_machine.value}</td>
+    <td>${parsed_elf.elf_contents.e_ident.EI_CLASS.value}</td>
+    <td>${parsed_elf.elf_contents.e_ident.EI_DATA.value}</td>
+    </tr>`;
+    
+    
+    table += "</table>";
+    
+    
+    document.getElementById("prologue").innerHTML =  table;
+}
+
+function create_accordion(parsed_elf){
+    
+    
+    
+    // Iterate over the contents of the parsed ELF file.
+    for (const content_name in parsed_elf.elf_contents) {
+
+        var menu = "";
+        
+        // Check if the current content is an array and specifically the "elf_phdr" content.
+        if (Array.isArray(parsed_elf.elf_contents[content_name]) ) {
+            // Iterate over each item in the array.
+            for (const array_item in parsed_elf.elf_contents[content_name]) {
+                // Iterate over each member in the current item.
+                for (const member_name in parsed_elf.elf_contents[content_name][array_item]) {
+                    // Get the ELF part object.
+                    const part = parsed_elf.elf_contents[content_name][array_item][member_name];
+                    const { offset, size_bytes } = part;
+                    
+                    
+                }
+            }
+            
+            // this case is for when the elf part is not an array, e.g. just the header or e_ident.
+            // lots of elf parts are actually arrays (e.g. phdr, shdr, symtab, ...) because they hold multiple entries.
+        } else {
+            // Iterate over each member in the current content.
+            for (const member_name in parsed_elf.elf_contents[content_name]) {
+                // Get the ELF part object.
+                const part = parsed_elf.elf_contents[content_name][member_name];
+                const { offset, size_bytes } = part;
+                
+                var value = "";
+                if(typeof part.value == 'number'){
+                    value = `<span style="color:#00897b;">0x${part.raw_hex}</span>`;
+                }else{
+                    value = `<span style="color:#00897b;">${part.value}</span>`;
+                }
+                
+                menu += `
+                <tr>
+                <td><a href="${part.offset}">${part.name}</a></td>
+                <td>Value: ${value}</td>
+                <td>Raw Value: <span style="color:#00897b;"> 0x${part.raw_hex} </span></td>
+                </tr>
+                `;
+                
+                 
+            }
+            console.log(content_name);
+            document.getElementById("accordion-elf-header").innerHTML += `<table>${menu}</table>`;
+            
+        }
+    }
+    
+    
+}
 
 function handleFiles() {
     
@@ -249,6 +236,8 @@ function handleFiles() {
     .run(this.files[0])
     .then((result) => {
         console.log(result);
+        create_prologue(result);
+        create_accordion(result);
         create_table(result);
     })
     .catch((error) => {

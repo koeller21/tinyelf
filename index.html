@@ -36,23 +36,27 @@
                     <input type="file" id="input" />
                 </label>
                 
-                <details>
-                    <summary>ELF Security</summary>
-                </details>
+                <div id="menu">
+                    <details>
+                        <summary>ELF Security</summary>
+                    </details>
+                    
+                    <details id="accordion-elf-header">
+                        <summary>ELF Header</summary>
+                    </details>
+                    
+                    <details>
+                        <summary>Program Header</summary>
+                    </details>
+                    
+                    <details>
+                        <summary>Section Header</summary>
+                    </details>
+                </div>
                 
-                <details>
-                    <summary>ELF Header</summary>
-                </details>
-                
-                <details>
-                    <summary>Program Header</summary>
-                </details>
-                
-                <details>
-                    <summary>Section Header</summary>
-                </details>
             </div>
             <div>
+                <span id="prologue"></span>
                 <span id="hexTable"></span>
             </div>
         </div>
