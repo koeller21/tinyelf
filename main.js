@@ -10,12 +10,10 @@ function printHexValues(dataView, addressToPartMapping) {
         var hexValuesRow = "";
         var asciiValuesRow = "";
         
-        // console.log(address);
         
         for(var offset = address; offset < address+7; offset += addressToPartMapping[offset].size_bytes){
             
             var part = addressToPartMapping[offset];
-            // console.log(part);
             
             if(!part){
                 break;
@@ -142,7 +140,6 @@ function create_table(parsed_elf) {
         }
     }
     
-    // Log the address-to-part mapping object to the console for debugging purposes.
     console.log(addressToPartMapping);
     
     // Use the printHexValues function to create the HTML table and insert it into the DOM.
@@ -178,29 +175,26 @@ function create_accordion(parsed_elf){
     // Iterate over the contents of the parsed ELF file.
     for (const content_name in parsed_elf.elf_contents) {
 
-        var menu = "";
+        build_menu_items(parsed_elf, content_name);
+
+    }
+    
+    
+}
+
+function build_menu_items(parsed_elf, content_name){
+
+    var menu = "";
+
         
-        // Check if the current content is an array and specifically the "elf_phdr" content.
-        if (Array.isArray(parsed_elf.elf_contents[content_name]) ) {
-            // Iterate over each item in the array.
-            for (const array_item in parsed_elf.elf_contents[content_name]) {
-                // Iterate over each member in the current item.
-                for (const member_name in parsed_elf.elf_contents[content_name][array_item]) {
-                    // Get the ELF part object.
-                    const part = parsed_elf.elf_contents[content_name][array_item][member_name];
-                    const { offset, size_bytes } = part;
-                    
-                    
-                }
-            }
-            
-            // this case is for when the elf part is not an array, e.g. just the header or e_ident.
-            // lots of elf parts are actually arrays (e.g. phdr, shdr, symtab, ...) because they hold multiple entries.
-        } else {
-            // Iterate over each member in the current content.
-            for (const member_name in parsed_elf.elf_contents[content_name]) {
+    // Check if the current content is an array and specifically the "elf_phdr" content.
+    if (Array.isArray(parsed_elf.elf_contents[content_name]) ) {
+        // Iterate over each item in the array.
+        for (const array_item in parsed_elf.elf_contents[content_name]) {
+            // Iterate over each member in the current item.
+            for (const member_name in parsed_elf.elf_contents[content_name][array_item]) {
                 // Get the ELF part object.
-                const part = parsed_elf.elf_contents[content_name][member_name];
+                const part = parsed_elf.elf_contents[content_name][array_item][member_name];
                 const { offset, size_bytes } = part;
                 
                 var value = "";
@@ -212,21 +206,54 @@ function create_accordion(parsed_elf){
                 
                 menu += `
                 <tr>
-                <td><a href="${part.offset}">${part.name}</a></td>
-                <td>Value: ${value}</td>
-                <td>Raw Value: <span style="color:#00897b;"> 0x${part.raw_hex} </span></td>
+                <td>${part.name}</td>
+                <td>${value}</td>
+                <td><a href="#${part.offset.toString().padStart(8, "0")}">${part.offset.toString().padStart(8, "0")}</a></td>
                 </tr>
                 `;
                 
-                 
             }
-            console.log(content_name);
-            document.getElementById("accordion-elf-header").innerHTML += `<table>${menu}</table>`;
-            
+
         }
+        
+        // this case is for when the elf part is not an array, e.g. just the header or e_ident.
+        // lots of elf parts are actually arrays (e.g. phdr, shdr, symtab, ...) because they hold multiple entries.
+    } else {
+        // Iterate over each member in the current content.
+        for (const member_name in parsed_elf.elf_contents[content_name]) {
+            // Get the ELF part object.
+            const part = parsed_elf.elf_contents[content_name][member_name];
+            const { offset, size_bytes } = part;
+            
+            var value = "";
+            if(typeof part.value == 'number'){
+                value = `<span style="color:#00897b;">0x${part.raw_hex}</span>`;
+            }else{
+                value = `<span style="color:#00897b;">${part.value}</span>`;
+            }
+            
+            menu += `
+            <tr>
+            <td>${part.name}</td>
+            <td>${value}</td>
+            <td><a href="#${part.offset.toString().padStart(8, "0")}">${part.offset.toString().padStart(8, "0")}</a></td>
+            </tr>
+            `;
+            
+             
+        }
+
+
     }
+
+    var menu_name = "accordion-"+content_name;
+    console.log(menu_name);
+    document.getElementById(menu_name).innerHTML += `<table>
+    <tr><th>Field</th><th>Value</th><th>Offset</th></tr>
+    ${menu}
+    </table>`;
     
-    
+
 }
 
 function handleFiles() {

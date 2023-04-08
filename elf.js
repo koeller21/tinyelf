@@ -862,6 +862,7 @@ ELF.prototype.processElfDyn32 = function(){
 }
 
 ELF.prototype.processElfDyn64 = function(){
+
     /*
     The .dynamic section contains a series of structures 
     that hold relevant dynamic linking information.
@@ -872,7 +873,7 @@ ELF.prototype.processElfDyn64 = function(){
     var dynamic = null;
     
     for(var i = 0; i < this.elf_contents.elf_shdr.length; i++){
-        if(this.elf_contents.elf_shdr[i].sh_type == "SHT_DYNAMIC"){
+        if(this.elf_contents.elf_shdr[i].sh_type.value == "SHT_DYNAMIC"){
             dynamic = this.elf_contents.elf_shdr[i];
         }
     }
@@ -883,22 +884,36 @@ ELF.prototype.processElfDyn64 = function(){
     }
     
     // get number of entries in symtable
-    var dynamic_entries_number = dynamic.sh_size / dynamic.sh_entsize;
-    
+    var dynamic_entries_number = dynamic.sh_size.value / dynamic.sh_entsize.value;
+
     var dynamic_entries = [];
     
     for(var dynamic_entry_count = 0; dynamic_entry_count < dynamic_entries_number; dynamic_entry_count++){
         
         // calculate offset
-        var dynamic_offset = dynamic.sh_offset + (dynamic_entry_count * dynamic.sh_entsize);
+        var dynamic_offset = dynamic.sh_offset.value + (dynamic_entry_count * dynamic.sh_entsize.value);
         
         /*
         The d_tag member controls the interpretation of the d_un entry
         */
-        const d_tag = elf_dynamic.d_tag[this.elfFile.getBigInt64(dynamic_offset, this.is_lsb)];
+        const d_tag = {
+            value : elf_dynamic.d_tag[this.elfFile.getBigInt64(dynamic_offset, this.is_lsb)],
+            raw_dec : this.elfFile.getBigInt64(dynamic_offset, this.is_lsb).toString(),
+            raw_hex : this.elfFile.getBigInt64(dynamic_offset, this.is_lsb).toString(16),
+            size_bytes : this.data_types.Elf_Sxword,
+            offset : dynamic_offset,
+            name : "d_tag"
+        };
         dynamic_offset += this.data_types.Elf_Sxword;
         
-        const d_un = Number(this.elfFile.getBigUint64(dynamic_offset, this.is_lsb));
+        const d_un = {
+            value : Number(this.elfFile.getBigUint64(dynamic_offset, this.is_lsb)),
+            raw_dec : this.elfFile.getBigUint64(dynamic_offset, this.is_lsb).toString(),
+            raw_hex : this.elfFile.getBigUint64(dynamic_offset, this.is_lsb).toString(16),
+            size_bytes : this.data_types.Elf_Xword,
+            offset : dynamic_offset,
+            name : "d_un"
+        };
         dynamic_offset += this.data_types.Elf_Xword;
         
         var dynamic_entry = {
@@ -909,7 +924,7 @@ ELF.prototype.processElfDyn64 = function(){
         dynamic_entries.push(dynamic_entry);
         
     }
-    
+
     return dynamic_entries;
     
 }
@@ -942,9 +957,9 @@ ELF.prototype.processElfSymbolTables = function(symbol_table_type) {
     // for the dynamic symbols, you could also check the dynamic section
     // for DT_SYMTAB
     for(var i = 0; i < this.elf_contents.elf_shdr.length; i++){
-        if(this.elf_contents.elf_shdr[i].sh_type == symbol_table_type){
+        if(this.elf_contents.elf_shdr[i].sh_type.value == symbol_table_type){
             symtab = this.elf_contents.elf_shdr[i];
-            strtab_offset = this.elf_contents.elf_shdr[symtab.sh_link].sh_offset;
+            strtab_offset = this.elf_contents.elf_shdr[symtab.sh_link.value].sh_offset.value;
             
         }
     }
@@ -955,26 +970,26 @@ ELF.prototype.processElfSymbolTables = function(symbol_table_type) {
     }
     
     // check if sh_size is 0 or sh_size is greater than entire file size, if yes, abort
-    if(symtab.sh_size == 0 || symtab.sh_size > this.file_length){
-        const err = new Error("symbol table section size error: " + symtab.sh_size);
+    if(symtab.sh_size.value == 0 || symtab.sh_size.value > this.file_length){
+        const err = new Error("symbol table section size error: " + symtab.sh_size.value);
         return err;
     }
     
-    // check if sh_entsize is 0 or if sh_entsize is greater than sh_size, if yes, abort
-    if(symtab.sh_entsize == 0 || symtab.sh_entsize > symtab.sh_size){
-        const err = new Error("symbol table section table member size error: " + symtab.sh_entsize);
+    // check if sh_entsize is 0 or if sh_entsize is greater than sh_size.value, if yes, abort
+    if(symtab.sh_entsize.value == 0 || symtab.sh_entsize.value > symtab.sh_size.value){
+        const err = new Error("symbol table section table member size error: " + symtab.sh_entsize.value);
         return err;
     }
     
     // get number of entries in symtable
-    var symtab_entries_number = symtab.sh_size / symtab.sh_entsize;
+    var symtab_entries_number = symtab.sh_size.value / symtab.sh_entsize.value;
     
     var symtab_entries = [];
     
     for(var symtab_entry_count = 0; symtab_entry_count < symtab_entries_number; symtab_entry_count++){
         
         // calculate offset
-        var symtab_offset = symtab.sh_offset + (symtab_entry_count * symtab.sh_entsize);
+        var symtab_offset = symtab.sh_offset.value + (symtab_entry_count * symtab.sh_entsize.value);
         
         /*
         This  member holds an index into the object file's symbol string table, which holds 
@@ -982,7 +997,14 @@ ELF.prototype.processElfSymbolTables = function(symbol_table_type) {
         string table index that gives the symbol name. Otherwise, the symbol has no name.
         */
         const st_name_offset = this.elfFile.getUint32(symtab_offset, this.is_lsb);
-        const st_name = this.getSectionHeaderString(strtab_offset + st_name_offset);
+        const st_name = {
+            value : this.getSectionHeaderString(strtab_offset + st_name_offset),
+            raw_dec : st_name_offset.toString(),
+            raw_hex : st_name_offset.toString(16),
+            size_bytes : this.data_types.Elf_Word,
+            offset : symtab_offset,
+            name : "st_name"
+        };
         symtab_offset += this.data_types.Elf_Word;
         
         /*
@@ -999,8 +1021,22 @@ ELF.prototype.processElfSymbolTables = function(symbol_table_type) {
         type and the binding
         */
         
-        const st_bind = elf_sym.st_bind[this.elfFile.getUint8(symtab_offset, this.is_lsb) >> 4]; 
-        const st_type = elf_sym.st_type[this.elfFile.getUint8(symtab_offset, this.is_lsb) & 0xF];
+        const st_bind = {
+            value :  elf_sym.st_bind[this.elfFile.getUint8(symtab_offset, this.is_lsb) >> 4],
+            raw_dec : (this.elfFile.getUint8(symtab_offset, this.is_lsb) >> 4).toString(),
+            raw_hex : (this.elfFile.getUint8(symtab_offset, this.is_lsb) >> 4).toString(16),
+            size_bytes : this.data_types.char,
+            offset : symtab_offset,
+            name : "st_bind"
+        };
+        const st_type = {
+            value :  elf_sym.st_type[this.elfFile.getUint8(symtab_offset, this.is_lsb) & 0xF],
+            raw_dec : (this.elfFile.getUint8(symtab_offset, this.is_lsb) & 0xF).toString(),
+            raw_hex : (this.elfFile.getUint8(symtab_offset, this.is_lsb) & 0xF).toString(16),
+            size_bytes : this.data_types.char,
+            offset : symtab_offset,
+            name : "st_type"
+        };
         symtab_offset += this.data_types.char;
         
         /* 
@@ -1014,14 +1050,28 @@ ELF.prototype.processElfSymbolTables = function(symbol_table_type) {
         Operation |            -               |  &0x3 |
         
         */
-        const st_other = elf_sym.st_other[this.elfFile.getUint8(symtab_offset, this.is_lsb) & 0x3] ;
+        const st_other = {
+            value :  elf_sym.st_other[this.elfFile.getUint8(symtab_offset, this.is_lsb) & 0x3],
+            raw_dec : (this.elfFile.getUint8(symtab_offset, this.is_lsb) & 0x3).toString(),
+            raw_hex : (this.elfFile.getUint8(symtab_offset, this.is_lsb) & 0x3).toString(16),
+            size_bytes : this.data_types.char,
+            offset : symtab_offset,
+            name : "st_other"
+        };
         symtab_offset += this.data_types.char;
         
         /*
         Every symbol table entry is "defined" in relation to some section.  
         This member holds the relevant section header table index.
         */
-        const st_shndx = this.elfFile.getUint16(symtab_offset, this.is_lsb);
+        const st_shndx = {
+            value :  this.elfFile.getUint16(symtab_offset, this.is_lsb),
+            raw_dec : this.elfFile.getUint16(symtab_offset, this.is_lsb).toString(),
+            raw_hex : this.elfFile.getUint16(symtab_offset, this.is_lsb).toString(16),
+            size_bytes : this.data_types.Elf_Half,
+            offset : symtab_offset,
+            name : "st_shndx"
+        };
         symtab_offset += this.data_types.Elf_Half;
         
         
@@ -1030,13 +1080,27 @@ ELF.prototype.processElfSymbolTables = function(symbol_table_type) {
         This actually points to the address of that symbol if the
         st_type is of FUNC
         */
-        const st_value = Number(this.elfFile.getBigUint64(symtab_offset, this.is_lsb));
+        const st_value = {
+            value :  Number(this.elfFile.getBigUint64(symtab_offset, this.is_lsb)),
+            raw_dec : Number(this.elfFile.getBigUint64(symtab_offset, this.is_lsb)).toString(),
+            raw_hex : Number(this.elfFile.getBigUint64(symtab_offset, this.is_lsb)).toString(16),
+            size_bytes : this.data_types.Elf_Addr,
+            offset : symtab_offset,
+            name : "st_value"
+        };
         symtab_offset += this.data_types.Elf_Addr;
         
         /*
         Many symbols have associated sizes. This member holds zero if the symbol has no size or an unknown size.
         */
-        const st_size = Number(this.elfFile.getBigUint64(symtab_offset, this.is_lsb));
+        const st_size = {
+            value :  Number(this.elfFile.getBigUint64(symtab_offset, this.is_lsb)),
+            raw_dec : Number(this.elfFile.getBigUint64(symtab_offset, this.is_lsb)).toString(),
+            raw_hex : Number(this.elfFile.getBigUint64(symtab_offset, this.is_lsb)).toString(16),
+            size_bytes : this.data_types.Elf_Xword,
+            offset : symtab_offset,
+            name : "st_size"
+        };
         symtab_offset += this.data_types.Elf_Xword;
         
         var symtab_entry = {
