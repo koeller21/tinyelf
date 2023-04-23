@@ -614,6 +614,7 @@ ELF.prototype.processElfPhdr64 = function(){
         phdr_entry_offset += this.data_types.Elf_Xword;
         
         var phdr_entry = {
+            offset : p_type.offset.toString(16),
             p_type : p_type,
             p_flags : p_flags,
             p_offset : p_offset,
@@ -1140,27 +1141,31 @@ ELF.prototype.processByClass = function(functionPrefix) {
 };
 
 ELF.prototype.processElfHdr = function() {
-    return this.processByClass('processElfHdr');
+    return this.processByClass("processElfHdr");
 };
 
 ELF.prototype.processElfPhdr = function() {
-    return this.processByClass('processElfPhdr');
+    return this.processByClass("processElfPhdr");
 };
 
 ELF.prototype.processElfShdr = function() {
-    return this.processByClass('processElfShdr');
+    return this.processByClass("processElfShdr");
 };
 
 ELF.prototype.processElfDyn = function() {
-    return this.processByClass('processElfDyn');
+    return this.processByClass("processElfDyn");
 };
 
 ELF.prototype.processElfSymtab = function() {
-    return this.processByClass('processElfSymtab');
+    return this.processByClass("processElfSymtab");
 };
 
 ELF.prototype.processElfDynSymtab = function() {
-    return this.processByClass('processElfDynSymtab');
+    return this.processByClass("processElfDynSymtab");
+};
+
+ELF.prototype.processElfRelocation = function() {
+    return this.processByClass("processElfRelocation");
 };
 
 

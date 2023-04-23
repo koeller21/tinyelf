@@ -174,46 +174,101 @@ function create_accordion(parsed_elf){
     
     // Iterate over the contents of the parsed ELF file.
     for (const content_name in parsed_elf.elf_contents) {
-
+        
         build_menu_items(parsed_elf, content_name);
-
+        
     }
     
     
 }
 
+function get_descriptive_field(content_name){
+    
+    var descriptive_fields = []
+    
+    switch(content_name){
+        case "elf_phdr":
+        descriptive_fields = ["p_type"]
+        break;
+        case "elf_shdr":
+        descriptive_fields = ["sh_name", "sh_type"]
+        break;
+        case "elf_dyn":
+        descriptive_fields = ["d_tag"]
+        break;
+        case "elf_dynsymtab":
+        descriptive_fields = ["st_name", "st_type", "st_other", "st_bind"]
+        break;
+        case "elf_symtab":
+        descriptive_fields = ["st_name", "st_type", "st_other", "st_bind"]
+        break;
+    }
+
+    return descriptive_fields;
+}
+
 function build_menu_items(parsed_elf, content_name){
-
+    
     var menu = "";
-
-        
+    
+    
     // Check if the current content is an array and specifically the "elf_phdr" content.
     if (Array.isArray(parsed_elf.elf_contents[content_name]) ) {
         // Iterate over each item in the array.
         for (const array_item in parsed_elf.elf_contents[content_name]) {
-            // Iterate over each member in the current item.
-            for (const member_name in parsed_elf.elf_contents[content_name][array_item]) {
-                // Get the ELF part object.
-                const part = parsed_elf.elf_contents[content_name][array_item][member_name];
-                const { offset, size_bytes } = part;
+            
+            var obj = parsed_elf.elf_contents[content_name][array_item];
+            
+            if(obj.offset != null){
                 
-                var value = "";
-                if(typeof part.value == 'number'){
-                    value = `<span style="color:#00897b;">0x${part.raw_hex}</span>`;
-                }else{
-                    value = `<span style="color:#00897b;">${part.value}</span>`;
+                var x = "";
+
+                for(const field of get_descriptive_field(content_name)){
+                    x += `<td>${parsed_elf.elf_contents[content_name][array_item][field].value}</td>`
                 }
+
                 
                 menu += `
                 <tr>
-                <td>${part.name}</td>
-                <td>${value}</td>
-                <td><a href="#${part.offset.toString().padStart(8, "0")}">${part.offset.toString().padStart(8, "0")}</a></td>
+                ${x}
+                <td>${obj.offset.padStart(8, "0")}</td>
                 </tr>
                 `;
                 
             }
-
+            
+            
+            
+            // Iterate over each member in the current item.
+            // for (const member_name in parsed_elf.elf_contents[content_name][array_item]) {
+            
+            
+            //     // Get the ELF part object.
+            //     const part = parsed_elf.elf_contents[content_name][array_item][member_name];
+            
+            //     if(part == null || part.name == null || part.offset == null){
+            //         continue;
+            //     }
+            
+            //     const { offset, size_bytes } = part;
+            
+            //     var value = "";
+            //     if(typeof part.value == 'number'){
+            //         value = `<span style="color:#00897b;">0x${part.raw_hex}</span>`;
+            //     }else{
+            //         value = `<span style="color:#00897b;">${part.value}</span>`;
+            //     }
+            
+            //     menu += `
+            //     <tr>
+            //     <td>${part.name}</td>
+            //     <td>${value}</td>
+            //     <td><a href="#${part.offset.toString().padStart(8, "0")}">${part.offset.toString().padStart(8, "0")}</a></td>
+            //     </tr>
+            //     `;
+            
+            // }
+            
         }
         
         // this case is for when the elf part is not an array, e.g. just the header or e_ident.
@@ -223,6 +278,11 @@ function build_menu_items(parsed_elf, content_name){
         for (const member_name in parsed_elf.elf_contents[content_name]) {
             // Get the ELF part object.
             const part = parsed_elf.elf_contents[content_name][member_name];
+            
+            if(part == null || part.name == null || part.offset == null){
+                continue;
+            }
+            
             const { offset, size_bytes } = part;
             
             var value = "";
@@ -232,6 +292,8 @@ function build_menu_items(parsed_elf, content_name){
                 value = `<span style="color:#00897b;">${part.value}</span>`;
             }
             
+            
+            
             menu += `
             <tr>
             <td>${part.name}</td>
@@ -240,12 +302,12 @@ function build_menu_items(parsed_elf, content_name){
             </tr>
             `;
             
-             
+            
         }
-
-
+        
+        
     }
-
+    
     var menu_name = "accordion-"+content_name;
     console.log(menu_name);
     document.getElementById(menu_name).innerHTML += `<table>
@@ -253,7 +315,7 @@ function build_menu_items(parsed_elf, content_name){
     ${menu}
     </table>`;
     
-
+    
 }
 
 function handleFiles() {

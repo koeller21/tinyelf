@@ -8,7 +8,7 @@ so so source:
 https://github.com/torvalds/linux/blob/master/include/uapi/linux/elf.h
 
 so so source with explanation:
-https://docs.oracle.com/cd/E19683-01/817-3677/chapter6-94076/index.html
+https://docs.oracle.com/cd/E19683-01/816-1386/index.html
 
 */
 
@@ -652,37 +652,45 @@ const elf_dynamic = {
     entries to fixup these addresses.
     */
     d_tag : {
-        0 : "DT_NULL",
-        1 : "DT_NEEDED",
-        2 : "DT_PLTRELSZ",
-        3 : "DT_PLTGOT",
-        4 : "DT_HASH",
-        5 : "DT_STRTAB",
-        6 : "DT_SYMTAB",
-        7 : "DT_RELA",
-        8 : "DT_RELASZ",
-        9 : "DT_RELAENT",
-        10 : "DT_STRSZ",
-        11 : "DT_SYMENT",
-        12 : "DT_INIT",
-        13 : "DT_FINI",
-        14 : "DT_SONAME",
-        15 : "DT_RPATH",
-        16 : "DT_SYMBOLIC",
-        17 : "DT_REL",
-        18 : "DT_RELSZ",
-        19 : "DT_RELENT",
-        20 : "DT_PLTREL",
-        21 : "DT_DEBUG",
-        22 : "DT_TEXTREL",
-        23 : "DT_JMPREL",
-        24 : "DT_BIND_NOW",
-        25 : "DT_INIT_ARRAY",
-        26 : "DT_FINI_ARRAY",
-        27 : "DT_INIT_ARRAYSZ",
-        28 : "DT_FINI_ARRAYSZ",
-        29 : "DT_RUNPATH",
-        30 : "DT_FLAGS",
+        0 : "DT_NULL",              /* Marks end of dynamic section */
+        1 : "DT_NEEDED",            /* String table offset to name of a needed library */
+        2 : "DT_PLTRELSZ",          /* Size in bytes of PLT relocation entries */
+        3 : "DT_PLTGOT",            /* Address of PLT and/or GOT */
+        4 : "DT_HASH",              /* Address of symbol hash table */
+        5 : "DT_STRTAB",            /* Address of string table */
+        6 : "DT_SYMTAB",            /* Address of symbol table */
+        7 : "DT_RELA",              /* Address of Rela relocation table */
+        8 : "DT_RELASZ",            /* Size in bytes of the Rela relocation table */
+        9 : "DT_RELAENT",           /* Size in bytes of a Rela relocation table entry */
+        10 : "DT_STRSZ",            /* Size in bytes of string table */
+        11 : "DT_SYMENT",           /* Size in bytes of a symbol table entry */
+        12 : "DT_INIT",             /* Address of the initialization function (pointer to .init section ) */
+        13 : "DT_FINI",             /* Address of the termination function (pointer to .fini section)*/
+        14 : "DT_SONAME",           /* String table offset to name of shared object */
+        15 : "DT_RPATH",            /* String table offset to library search path (deprecated) */
+        16 : "DT_SYMBOLIC",         /* Alert linker to search this shared object before the executable for symbols */
+        17 : "DT_REL",              /* Address of Rel relocation table */
+        18 : "DT_RELSZ",            /* Size in bytes of Rel relocation table */
+        19 : "DT_RELENT",           /* Size in bytes of a Rel table entry */
+        20 : "DT_PLTREL",           /* Type of relocation entry to which the PLT refers (Rela or Rel) */
+        21 : "DT_DEBUG",            /* Undefined use for debugging */
+        22 : "DT_TEXTREL",          /* Absence of this entry indicates that no relocation entries should apply to a nonwritable segment */
+        23 : "DT_JMPREL",           /* Address of relocation entries associated solely with the PLT */
+        24 : "DT_BIND_NOW",         /* Instruct dynamic linker to process all relocations before transferring control to the executable */
+        25 : "DT_INIT_ARRAY",       /* Points to an array of function addresses that must be
+                                       called, in-order, to perform initialization. Some of
+                                       the entries in the array can be 0 or -1, and should
+                                       be ignored.
+                                       Note: this is generally stored in a .init_array section
+                                    */
+        26 : "DT_FINI_ARRAY",       /* Same as DT_INITARRAY but for finalizers. Note that the
+                                       functions must be called in reverse-order though
+                                       Note: this is generally stored in a .fini_array section 
+                                    */
+        27 : "DT_INIT_ARRAYSZ",     /* The size of the DT_INITARRAY, if any */
+        28 : "DT_FINI_ARRAYSZ",     /* The size of the DT_FINI_ARRAY, if any */
+        29 : "DT_RUNPATH",          /* String table offset to library search path */
+        30 : "DT_FLAGS",            /* Flag values specific to this object. */
         32 : "DT_PREINIT_ARRAY",
         33 : "DT_PREINIT_ARRAYSZ",
         34 : "DT_SYMTAB_SHNDX",
@@ -742,7 +750,7 @@ const elf_dynamic = {
         
         0x6ffffff9 : "DT_RELACOUNT",	
         0x6ffffffa : "DT_RELCOUNT",	
-        0x6ffffffb : "DT_FLAGS_1",	
+        0x6ffffffb : "DT_FLAGS_1",	       /* Flag values specific to this object. */
         0x6ffffffc : "DT_VERDEF",	
         0x6ffffffd : "DT_VERDEFNUM",	
         0x6ffffffe : "DT_VERNEED",	
@@ -759,7 +767,46 @@ const elf_dynamic = {
         
         0x7ffffffd : "DT_AUXILIARY",	
         0x7ffffffe : "DT_USED",		
-        0x7fffffff : "DT_FILTER",	
+        0x7fffffff : "DT_FILTER"
+    },
+
+    /* Flag values specific to this object. */
+    DT_FLAGS : {
+        0x1 : "DF_ORIGIN",      /* $ORIGIN processing required */
+        0x2 : "DF_SYMBOLIC",    /* Symbolic symbol resolution required.  */
+        0x4 : "DF_TEXTREL",     /* Text relocations exist. */
+        0x8 : "DF_BIND_NOW"     /* Non-lazy binding required. */
+    },
+
+    DT_FLAGS_1 : {
+        0x1     : "DF_1_NOW",          /* Perform complete relocation processing. */
+        0x2     : "DF_1_GLOBAL",       /* Unused */
+        0x4     : "DF_1_GROUP",        /* Indicate object is a member of a group. */
+        0x8     : "DF_1_NODELETE",     /* Object cannot be deleted from a process. */
+        0x10    : "DF_1_LOADFLTR",     /* Ensure immediate loading of filtees. */
+        0x20    : "DF_1_INITFIRST",    /* Objects' initialization occurs first. */
+        0x40    : "DF_1_NOOPEN",       /* Object can not be used with dlopen(3DL). */
+        0x80    : "DF_1_ORIGIN",       /* $ORIGIN processing required. */
+        0x100   : "DF_1_DIRECT",       /* Direct bindings enabled */
+        0x400   : "DF_1_INTERPOSE",    /* Object is an interposer */
+        0x800   : "DF_1_NODEFLIB",     /* Ignore default library search path */
+        0x1000  : "DF_1_NODUMP",       /* Object cannot be dumped with dldump(3DL) */
+        0x2000  : "DF_1_CONFALT",      /* Object is a configuration alternative. */
+        0x4000  : "DF_1_ENDFILTEE",    /* Filtee terminates filter's search. */
+        0x8000  : "DF_1_DISPRELDNE",   /* Displacement relocation done. */
+        0x10000 : "DF_1_DISPRELPND",   /* Displacement relocation pending. */
+    },
+
+    DT_POSFLAG_1 : {
+        0x1 : "DF_P1_LAZYLOAD",         /* Identify lazy loaded dependency.  */
+        0x2 : "DF_P1_GROUPPERM"         /* Identify group dependency. */
+    },
+
+    DT_FEATURE_1 : {
+        0x1 : "DTF_1_PARINIT",          /* Partial initialization is required.  */
+        0x2 : "DTF_1_CONFEXP"           /* A Configuration file is expected. */
     }
+
+
 }
 
