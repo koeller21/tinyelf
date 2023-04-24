@@ -858,6 +858,64 @@ ELF.prototype.processElfShdr64 = function(){
     
 };
 
+ELF.prototype.assignFlagValues = function(d_tag, d_un){
+
+    if(d_tag.value == "DT_FLAGS"){
+        // DT_FLAGS
+        d_un.value = this.parseFlagBits("DT_FLAGS", d_un.value);
+    }else if (d_tag.value == "DT_FLAGS_1"){
+        // DT_FLAGS_1
+        d_un.value = this.parseFlagBits("DT_FLAGS_1", d_un.value);
+    }else if(d_tag.value == "DT_POSFLAG_1"){
+        // DT_POSFLAG_1
+        d_un.value = this.parseFlagBits("DT_POSFLAG_1", d_un.value);
+    }else if(d_tag.value == "DT_FEATURE"){
+        // DT_FEATURE
+        d_un.value = this.parseFlagBits("DT_FEATURE", d_un.value);
+    }else if(d_tag.value == "DT_GNU_FLAGS_1"){
+        // DT_GNU_FLAGS_1
+        d_un.value = this.parseFlagBits("DT_GNU_FLAGS_1", d_un.value);
+    }
+
+    return d_un;
+
+}
+
+ELF.prototype.parseFlagBits = function(flag_type, d_un_val){
+    
+    var flags = [];
+
+    while (d_un_val) {
+
+        // isolates the least significant set bit im d_un_val
+        const flag = d_un_val & -d_un_val;
+
+        // clears the least significant set bit in flag
+        d_un_val &= ~flag;
+
+        // switch based on flag type
+        switch(flag_type){
+            case "DT_FLAGS":
+                flags.push(DT_FLAGS[flag]);
+                break;
+            case "DT_FLAGS_1":
+                flags.push(DT_FLAGS_1[flag]);
+                break;
+            case "DT_POSFLAG_1":
+                flags.push(DT_POSFLAG_1[flag]);
+                break;
+            case "DT_FEATURE":
+                flags.push(DT_FEATURE[flag]);
+                break;
+            case "DT_GNU_FLAGS_1":
+                flags.push(DT_GNU_FLAGS_1[flag]);
+                break;
+        }
+    }
+
+    return flags;
+}
+
 ELF.prototype.processElfDyn32 = function(){
     
 }
@@ -907,7 +965,7 @@ ELF.prototype.processElfDyn64 = function(){
         };
         dynamic_offset += this.data_types.Elf_Sxword;
         
-        const d_un = {
+        var d_un = {
             value : Number(this.elfFile.getBigUint64(dynamic_offset, this.is_lsb)),
             raw_dec : this.elfFile.getBigUint64(dynamic_offset, this.is_lsb).toString(),
             raw_hex : this.elfFile.getBigUint64(dynamic_offset, this.is_lsb).toString(16),
@@ -916,6 +974,8 @@ ELF.prototype.processElfDyn64 = function(){
             name : "d_un"
         };
         dynamic_offset += this.data_types.Elf_Xword;
+
+        d_un = this.assignFlagValues(d_tag, d_un);
         
         var dynamic_entry = {
             d_tag : d_tag,

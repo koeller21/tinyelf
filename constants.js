@@ -768,45 +768,55 @@ const elf_dynamic = {
         0x7ffffffd : "DT_AUXILIARY",	
         0x7ffffffe : "DT_USED",		
         0x7fffffff : "DT_FILTER"
-    },
-
-    /* Flag values specific to this object. */
-    DT_FLAGS : {
-        0x1 : "DF_ORIGIN",      /* $ORIGIN processing required */
-        0x2 : "DF_SYMBOLIC",    /* Symbolic symbol resolution required.  */
-        0x4 : "DF_TEXTREL",     /* Text relocations exist. */
-        0x8 : "DF_BIND_NOW"     /* Non-lazy binding required. */
-    },
-
-    DT_FLAGS_1 : {
-        0x1     : "DF_1_NOW",          /* Perform complete relocation processing. */
-        0x2     : "DF_1_GLOBAL",       /* Unused */
-        0x4     : "DF_1_GROUP",        /* Indicate object is a member of a group. */
-        0x8     : "DF_1_NODELETE",     /* Object cannot be deleted from a process. */
-        0x10    : "DF_1_LOADFLTR",     /* Ensure immediate loading of filtees. */
-        0x20    : "DF_1_INITFIRST",    /* Objects' initialization occurs first. */
-        0x40    : "DF_1_NOOPEN",       /* Object can not be used with dlopen(3DL). */
-        0x80    : "DF_1_ORIGIN",       /* $ORIGIN processing required. */
-        0x100   : "DF_1_DIRECT",       /* Direct bindings enabled */
-        0x400   : "DF_1_INTERPOSE",    /* Object is an interposer */
-        0x800   : "DF_1_NODEFLIB",     /* Ignore default library search path */
-        0x1000  : "DF_1_NODUMP",       /* Object cannot be dumped with dldump(3DL) */
-        0x2000  : "DF_1_CONFALT",      /* Object is a configuration alternative. */
-        0x4000  : "DF_1_ENDFILTEE",    /* Filtee terminates filter's search. */
-        0x8000  : "DF_1_DISPRELDNE",   /* Displacement relocation done. */
-        0x10000 : "DF_1_DISPRELPND",   /* Displacement relocation pending. */
-    },
-
-    DT_POSFLAG_1 : {
-        0x1 : "DF_P1_LAZYLOAD",         /* Identify lazy loaded dependency.  */
-        0x2 : "DF_P1_GROUPPERM"         /* Identify group dependency. */
-    },
-
-    DT_FEATURE_1 : {
-        0x1 : "DTF_1_PARINIT",          /* Partial initialization is required.  */
-        0x2 : "DTF_1_CONFEXP"           /* A Configuration file is expected. */
     }
-
-
 }
 
+// flag values for certain dynamic d_tag values
+const DT_FLAGS = {};
+DT_FLAGS[1 << 0] = "DF_ORIGIN";             /* $ORIGIN processing required */
+DT_FLAGS[1 << 1] = "DF_SYMBOLIC";           /* Symbolic symbol resolution required. */
+DT_FLAGS[1 << 2] = "DF_TEXTREL";            /* Text relocations exist. */
+DT_FLAGS[1 << 3] = "DF_BIND_NOW";           /* Non-lazy binding required. */
+
+const DT_FLAGS_1 = {};
+DT_FLAGS_1[1 << 0] = "DF_1_NOW";            /* Perform complete relocation processing. */
+DT_FLAGS_1[1 << 1] = "DF_1_GLOBAL";         /* Unused */
+DT_FLAGS_1[1 << 2] = "DF_1_GROUP";          /* Indicate object is a member of a group. */
+DT_FLAGS_1[1 << 3] = "DF_1_NODELETE";       /* Object cannot be deleted from a process. */
+DT_FLAGS_1[1 << 4] = "DF_1_LOADFLTR";       /* Ensure immediate loading of filtees. */
+DT_FLAGS_1[1 << 5] = "DF_1_INITFIRST";      /* Objects' initialization occurs first. */
+DT_FLAGS_1[1 << 6] = "DF_1_NOOPEN";         /* Object can not be used with dlopen(3DL). */
+DT_FLAGS_1[1 << 7] = "DF_1_ORIGIN";         /* $ORIGIN processing required. */
+DT_FLAGS_1[1 << 8] = "DF_1_DIRECT";         /* Direct bindings enabled */
+DT_FLAGS_1[1 << 10] = "DF_1_INTERPOSE";     /* Object is an interposer */
+DT_FLAGS_1[1 << 11] = "DF_1_NODEFLIB";      /* Ignore default library search path */
+DT_FLAGS_1[1 << 12] = "DF_1_NODUMP";        /* Object cannot be dumped with dldump(3DL) */
+DT_FLAGS_1[1 << 13] = "DF_1_CONFALT";       /* Object is a configuration alternative. */
+DT_FLAGS_1[1 << 14] = "DF_1_ENDFILTEE";     /* Filtee terminates filter's search. */
+DT_FLAGS_1[1 << 15] = "DF_1_DISPRELDNE";    /* Displacement relocation done. */
+DT_FLAGS_1[1 << 16] = "DF_1_DISPRELPND";    /* Displacement relocation pending. */
+DT_FLAGS_1[1 << 17] = "DF_1_NODIRECT";      /* Do not create dynamic relocations for references to external symbols. */
+DT_FLAGS_1[1 << 18] = "DF_1_IGNMULDEF";     /* Ignore multiple definitions of the same symbol. */
+DT_FLAGS_1[1 << 19] = "DF_1_NOKSYMS";       /* Object does not participate in symbol resolution. */
+DT_FLAGS_1[1 << 20] = "DF_1_NOHDR";         /* Object does not have an ELF header. */
+DT_FLAGS_1[1 << 21] = "DF_1_EDITED";        /* Object has been edited by runtime linker. */
+DT_FLAGS_1[1 << 22] = "DF_1_NORELOC";       /* Do not perform relocations. */
+DT_FLAGS_1[1 << 23] = "DF_1_SYMINTPOSE";    /* Object has symbols that are subject to interposition. */
+DT_FLAGS_1[1 << 24] = "DF_1_GLOBAUDIT";     /* Object requires global auditing. */
+DT_FLAGS_1[1 << 25] = "DF_1_SINGLETON";     /* Object is a singleton. */
+DT_FLAGS_1[1 << 26] = "DF_1_STUB";          /* Object is a stub. */
+DT_FLAGS_1[1 << 27] = "DF_1_PIE";           /* Object is position independent. */
+DT_FLAGS_1[1 << 28] = "DF_1_KMOD";          /* Object is a kernel module. */
+DT_FLAGS_1[1 << 29] = "DF_1_WEAKFILTER";    /* Object supports weak filtering. */
+DT_FLAGS_1[1 << 30] = "DF_1_NOCOMMON";      /* Object does not have common symbols. */
+
+const DT_POSFLAG_1 = {};
+DT_POSFLAG_1[1 << 0] = "DF_P1_LAZYLOAD";    /* Identify lazy loaded dependency. */
+DT_POSFLAG_1[1 << 1] = "DF_P1_GROUPPERM";   /* Identify group dependency. */
+
+const DT_FEATURE = {};
+DT_FEATURE[1 << 0] = "DTF_1_PARINIT";       /* Partial initialization is required. */
+DT_FEATURE[1 << 1] = "DTF_1_CONFEXP";       /* A Configuration file is expected. */
+
+const DT_GNU_FLAGS_1 = {};
+DT_GNU_FLAGS_1[1 << 0] = "DF_GNU_1_UNIQUE";
