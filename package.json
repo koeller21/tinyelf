@@ -1,0 +1,19 @@
+{
+  "name": "elfparse",
+  "version": "1.0.0",
+  "description": "a pure javascript library to parse ELF binaries",
+  "main": "elf.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/koeller21/elfparse.git"
+  },
+  "author": "Arne Koeller",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/koeller21/elfparse/issues"
+  },
+  "homepage": "https://github.com/koeller21/elfparse#readme"
+}

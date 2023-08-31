@@ -37,13 +37,14 @@ ELF.prototype.parseELF = function(arrayBuffer){
     this.elf_contents.elf_dyn = this.processElfDyn();
     this.elf_contents.elf_symtab = this.processElfSymtab();
     this.elf_contents.elf_dynsymtab = this.processElfDynSymtab();
+    this.elf_contents.elf_reloc = this.processElfRelocation();
     
     
 };
 
 ELF.prototype.processEIdent = function(){
     
-    var eident_offset = 0;
+    let eident_offset = 0;
     
     /*
     The first byte of the magic number.  It must be filled with ELFMAG0.  (0: 0x7f) 
@@ -247,7 +248,7 @@ ELF.prototype.processElfHdr32 = function(){
 
 ELF.prototype.processElfHdr64 = function(){
     
-    var hdr_offset = 16;
+    let hdr_offset = 16;
     
     /* This member of the structure identifies the object file type */
     const e_type = {
@@ -375,7 +376,7 @@ ELF.prototype.processElfHdr64 = function(){
     Thus the product of e_phentsize and e_phnum gives the table's size in bytes.  
     If a file has no program header,  e_phnum holds the value zero.
     */
-    var e_phnum = {
+    let e_phnum = {
         value : this.elfFile.getUint16(hdr_offset, this.is_lsb),
         raw_dec : this.elfFile.getUint16(hdr_offset, this.is_lsb).toString(),
         raw_hex : this.elfFile.getUint16(hdr_offset, this.is_lsb).toString(16),
@@ -416,7 +417,7 @@ ELF.prototype.processElfHdr64 = function(){
     Thus the product of e_shentsize and e_shnum gives the section header table's size in bytes.  
     If a file has  no  section header table, e_shnum holds the value of zero.
     */
-    var e_shnum = {
+    let e_shnum = {
         value : this.elfFile.getUint16(hdr_offset, this.is_lsb),
         raw_dec : this.elfFile.getUint16(hdr_offset, this.is_lsb).toString(),
         raw_hex : this.elfFile.getUint16(hdr_offset, this.is_lsb).toString(16),
@@ -441,7 +442,7 @@ ELF.prototype.processElfHdr64 = function(){
     This member holds the section header table index of the entry 
     associated with the section name string table. 
     */
-    var e_shstrndx = {
+    let e_shstrndx = {
         value : this.elfFile.getUint16(hdr_offset, this.is_lsb),
         raw_dec : this.elfFile.getUint16(hdr_offset, this.is_lsb).toString(),
         raw_hex : this.elfFile.getUint16(hdr_offset, this.is_lsb).toString(16),
@@ -491,11 +492,11 @@ ELF.prototype.processElfPhdr32 = function(){
 
 ELF.prototype.processElfPhdr64 = function(){
     
-    var phdr_entries = [];
+    let phdr_entries = [];
     
-    for(var phdr_entry_count = 0; phdr_entry_count < this.elf_contents.elf_hdr.e_phnum.value; phdr_entry_count++){
+    for(let phdr_entry_count = 0; phdr_entry_count < this.elf_contents.elf_hdr.e_phnum.value; phdr_entry_count++){
         
-        var phdr_entry_offset = this.elf_contents.elf_hdr.e_phoff.value + phdr_entry_count * this.elf_contents.elf_hdr.e_phentsize.value;
+        let phdr_entry_offset = this.elf_contents.elf_hdr.e_phoff.value + phdr_entry_count * this.elf_contents.elf_hdr.e_phentsize.value;
         
         /*
         This member of the structure indicates what kind of segment this array element 
@@ -613,7 +614,7 @@ ELF.prototype.processElfPhdr64 = function(){
         };
         phdr_entry_offset += this.data_types.Elf_Xword;
         
-        var phdr_entry = {
+        let phdr_entry = {
             offset : p_type.offset.toString(16),
             p_type : p_type,
             p_flags : p_flags,
@@ -633,16 +634,16 @@ ELF.prototype.processElfPhdr64 = function(){
     
 };
 
-ELF.prototype.getSectionHeaderString = function(offset) {
+ELF.prototype.getStringFromStringTable = function(offset) {
     
     // Initialize an array to store the characters
-    var chars = [];
+    let chars = [];
     
     // Read the first character from the given offset in the ELF file
-    var currentChar = this.elfFile.getUint8(offset, this.is_lsb);
+    let currentChar = this.elfFile.getUint8(offset, this.is_lsb);
     
     // Initialize an offset counter to track the read position
-    var offsetCounter = 0;
+    let offsetCounter = 0;
     
     // Continue reading characters until a null byte (0) is encountered
     while (currentChar !== 0) {
@@ -678,12 +679,12 @@ ELF.prototype.processElfShdr64 = function(){
     const shstrtab_entry_offset = this.elf_contents.elf_hdr.e_shoff.value + this.elf_contents.elf_hdr.e_shstrndx.value * this.elf_contents.elf_hdr.e_shentsize.value;
     const shstrtab_sh_offset = Number(this.elfFile.getBigUint64(shstrtab_entry_offset + 24, this.is_lsb));
     
-    var shdr_entries = [];
+    let shdr_entries = [];
     
-    for(var shdr_entry_count = 0; shdr_entry_count < this.elf_contents.elf_hdr.e_shnum.value; shdr_entry_count++){
+    for(let shdr_entry_count = 0; shdr_entry_count < this.elf_contents.elf_hdr.e_shnum.value; shdr_entry_count++){
         
         // calculate shdr_entry offset
-        var shdr_entry_offset = this.elf_contents.elf_hdr.e_shoff.value + shdr_entry_count * this.elf_contents.elf_hdr.e_shentsize.value;
+        let shdr_entry_offset = this.elf_contents.elf_hdr.e_shoff.value + shdr_entry_count * this.elf_contents.elf_hdr.e_shentsize.value;
         
         /*
         This member specifies the name of the section. 
@@ -692,7 +693,7 @@ ELF.prototype.processElfShdr64 = function(){
         */
         const sh_name_offset = this.elfFile.getUint32(shdr_entry_offset, this.is_lsb);
         const sh_name = {
-            value : this.getSectionHeaderString(shstrtab_sh_offset + sh_name_offset),
+            value : this.getStringFromStringTable(shstrtab_sh_offset + sh_name_offset),
             raw_dec : this.elfFile.getUint32(shdr_entry_offset, this.is_lsb).toString(),
             raw_hex : this.elfFile.getUint32(shdr_entry_offset, this.is_lsb).toString(16),
             size_bytes : this.data_types.Elf_Word,
@@ -836,7 +837,7 @@ ELF.prototype.processElfShdr64 = function(){
         shdr_entry_offset += this.data_types.Elf_Xword;
         
         
-        var shdr_entry = {
+        let shdr_entry = {
             sh_name : sh_name,
             sh_type : sh_type,
             sh_flags : sh_flags,
@@ -883,7 +884,7 @@ ELF.prototype.assignFlagValues = function(d_tag, d_un){
 
 ELF.prototype.parseFlagBits = function(flag_type, d_un_val){
     
-    var flags = [];
+    let flags = [];
 
     while (d_un_val) {
 
@@ -929,11 +930,11 @@ ELF.prototype.processElfDyn64 = function(){
     This function processes the .dynamic section.
     */
     
-    var dynamic = null;
+    let dynamic = null;
     
-    for(var i = 0; i < this.elf_contents.elf_shdr.length; i++){
-        if(this.elf_contents.elf_shdr[i].sh_type.value == "SHT_DYNAMIC"){
-            dynamic = this.elf_contents.elf_shdr[i];
+    for(const element of this.elf_contents.elf_shdr){
+        if(element.sh_type.value == "SHT_DYNAMIC"){
+            dynamic = element;
         }
     }
     
@@ -942,15 +943,15 @@ ELF.prototype.processElfDyn64 = function(){
         return null;
     }
     
-    // get number of entries in symtable
-    var dynamic_entries_number = dynamic.sh_size.value / dynamic.sh_entsize.value;
+    // get number of entries in dynamic section
+    let dynamic_entries_number = dynamic.sh_size.value / dynamic.sh_entsize.value;
 
-    var dynamic_entries = [];
+    let dynamic_entries = [];
     
-    for(var dynamic_entry_count = 0; dynamic_entry_count < dynamic_entries_number; dynamic_entry_count++){
+    for(let dynamic_entry_count = 0; dynamic_entry_count < dynamic_entries_number; dynamic_entry_count++){
         
         // calculate offset
-        var dynamic_offset = dynamic.sh_offset.value + (dynamic_entry_count * dynamic.sh_entsize.value);
+        let dynamic_offset = dynamic.sh_offset.value + (dynamic_entry_count * dynamic.sh_entsize.value);
         
         /*
         The d_tag member controls the interpretation of the d_un entry
@@ -965,7 +966,7 @@ ELF.prototype.processElfDyn64 = function(){
         };
         dynamic_offset += this.data_types.Elf_Sxword;
         
-        var d_un = {
+        let d_un = {
             value : Number(this.elfFile.getBigUint64(dynamic_offset, this.is_lsb)),
             raw_dec : this.elfFile.getBigUint64(dynamic_offset, this.is_lsb).toString(),
             raw_hex : this.elfFile.getBigUint64(dynamic_offset, this.is_lsb).toString(16),
@@ -977,7 +978,7 @@ ELF.prototype.processElfDyn64 = function(){
 
         d_un = this.assignFlagValues(d_tag, d_un);
         
-        var dynamic_entry = {
+        let dynamic_entry = {
             d_tag : d_tag,
             d_un : d_un
         }
@@ -989,6 +990,122 @@ ELF.prototype.processElfDyn64 = function(){
     return dynamic_entries;
     
 }
+
+ELF.prototype.processElfRelocation32 = function(){
+
+}
+
+ELF.prototype.processElfRelocation64 = function(){
+    
+    /*
+    Relocation is the process of connecting symbolic references with symbolic definitions.  
+    Relocatable files must have information that describes how to modify their section contents, thus allowing
+    executable and shared object files to hold the right information for a process's program image.  
+    Relocation entries are these data.
+
+    */
+
+    // find relocation section headers in section headers
+    // these could be either of type SHT_REL, SHT_RELA or SHT_RELR depending on the binary
+    let relocations_section_headers = [] 
+
+    for(const section_header of this.elf_contents.elf_shdr){
+        if(
+            section_header.sh_type.value == "SHT_REL" || 
+            section_header.sh_type.value == "SHT_RELA" || 
+            section_header.sh_type.value == "SHT_RELR" 
+        ){
+            relocations_section_headers.push(
+                {
+                    sh_type: section_header.sh_type.value,
+                    section_header : section_header
+                }
+            );
+        }
+    }
+
+    let relocation_entries = [];
+
+
+    for (const reloc of relocations_section_headers) {
+
+        // get number of entries in relocation section
+        let relocation_entries_number = reloc.section_header.sh_size.value / reloc.section_header.sh_entsize.value;
+
+        let relocation_entry = {
+            sh_name : reloc.section_header.sh_name
+        };
+
+        for(let relocation_entry_count = 0; relocation_entry_count < relocation_entries_number; relocation_entry_count++){
+
+            // calculate offset
+            let relocation_section_offset = reloc.section_header.sh_offset.value + (relocation_entry_count * reloc.section_header.sh_entsize.value);
+
+            // This member gives the location at which to apply the relocation action. 
+            // For a relocatable file, the value is the byte offset from the beginning of the section to the storage unit affected by the relocation. 
+            // For an executable file or shared object, the value is the virtual address of the storage unit affected by the relocation.
+            const r_offset = {
+                value : Number(this.elfFile.getBigUint64(relocation_section_offset, this.is_lsb)),
+                raw_dec : this.elfFile.getBigUint64(relocation_section_offset, this.is_lsb).toString(),
+                raw_hex : this.elfFile.getBigUint64(relocation_section_offset, this.is_lsb).toString(16),
+                size_bytes : this.data_types.Elf_Addr,
+                offset : relocation_section_offset,
+                name : "r_offset"
+            };
+            relocation_section_offset += this.data_types.Elf_Addr; 
+
+            relocation_entry.section_content = {
+                r_offset : r_offset
+            }
+
+            // SHT_RELR is a relocation entry without explicit addend or info (relative relocations only).
+            // this means that SHT_RELR will only contain an offset.
+            // SHT_REL and SHT_RELA will contain an info and SHT_RELA will contain an addend additionally
+            // Therefore, r_info and r_added will only apply to these
+            if (reloc.sh_type == "SHT_REL" || reloc.sh_type == "SHT_RELA") {
+
+                // This member gives both the symbol table index with respect to which the relocation must be made and the type of relocation to apply.  
+                // Relocation types are processor-specific.
+                // When the text refers to a relocation entry's relocation type or symbol table index, it means the result of applying ELF[32|64]_R_TYPE or ELF[32|64]_R_SYM, respectively, to the entry's r_info member.
+                const r_info = {
+                    value : Number(this.elfFile.getBigUint64(relocation_section_offset, this.is_lsb)),
+                    raw_dec : this.elfFile.getBigUint64(relocation_section_offset, this.is_lsb).toString(),
+                    raw_hex : this.elfFile.getBigUint64(relocation_section_offset, this.is_lsb).toString(16),
+                    size_bytes : this.data_types.Elf_Addr,
+                    offset : relocation_section_offset,
+                    name : "r_info"
+                };
+                relocation_section_offset += this.data_types.Elf_Addr;
+
+                relocation_entry.section_content.r_info = r_info;
+
+                // SHT_RELA contains an addend additionally
+                if (reloc.sh_type == "SHT_RELA") {
+
+                    // This member specifies a constant addend used to compute the value to be stored into the relocatable field.
+                    const r_addend = {
+                        value : Number(this.elfFile.getBigInt64(relocation_section_offset, this.is_lsb)),
+                        raw_dec : this.elfFile.getBigInt64(relocation_section_offset, this.is_lsb).toString(),
+                        raw_hex : this.elfFile.getBigInt64(relocation_section_offset, this.is_lsb).toString(16),
+                        size_bytes : this.data_types.Elf_Sxword,
+                        offset : relocation_section_offset,
+                        name : "r_addend"
+                    };
+                    relocation_section_offset += this.data_types.Elf_Sxword;
+
+                    relocation_entry.section_content.r_addend = r_addend;
+                }
+            }
+            
+            relocation_entries.push(relocation_entry);
+        }
+    }
+
+    return relocation_entries;
+
+}
+
+
 
 ELF.prototype.processElfDynSymtab32 = function(){
     
@@ -1009,17 +1126,17 @@ ELF.prototype.processElfSymtab64 = function(){
 
 ELF.prototype.processElfSymbolTables = function(symbol_table_type) {
     
-    var symtab = null;
-    var strtab_offset = 0; // strtab used for symtab st_name
+    let symtab = null;
+    let strtab_offset = 0; // strtab used for symtab st_name
     
     // get symtab from elf section header
     // to my knowledge, there no other way but to check for 
     // sh_type SHT_SYMTAB to get symbol table 
     // for the dynamic symbols, you could also check the dynamic section
     // for DT_SYMTAB
-    for(var i = 0; i < this.elf_contents.elf_shdr.length; i++){
-        if(this.elf_contents.elf_shdr[i].sh_type.value == symbol_table_type){
-            symtab = this.elf_contents.elf_shdr[i];
+    for(const element of this.elf_contents.elf_shdr){
+        if(element.sh_type.value == symbol_table_type){
+            symtab = element;
             strtab_offset = this.elf_contents.elf_shdr[symtab.sh_link.value].sh_offset.value;
             
         }
@@ -1043,14 +1160,14 @@ ELF.prototype.processElfSymbolTables = function(symbol_table_type) {
     }
     
     // get number of entries in symtable
-    var symtab_entries_number = symtab.sh_size.value / symtab.sh_entsize.value;
+    let symtab_entries_number = symtab.sh_size.value / symtab.sh_entsize.value;
     
-    var symtab_entries = [];
-    
-    for(var symtab_entry_count = 0; symtab_entry_count < symtab_entries_number; symtab_entry_count++){
+    let symtab_entries = [];
+
+    for(let symtab_entry_count = 0; symtab_entry_count < symtab_entries_number; symtab_entry_count++){
         
         // calculate offset
-        var symtab_offset = symtab.sh_offset.value + (symtab_entry_count * symtab.sh_entsize.value);
+        let symtab_offset = symtab.sh_offset.value + (symtab_entry_count * symtab.sh_entsize.value);
         
         /*
         This  member holds an index into the object file's symbol string table, which holds 
@@ -1059,7 +1176,7 @@ ELF.prototype.processElfSymbolTables = function(symbol_table_type) {
         */
         const st_name_offset = this.elfFile.getUint32(symtab_offset, this.is_lsb);
         const st_name = {
-            value : this.getSectionHeaderString(strtab_offset + st_name_offset),
+            value : this.getStringFromStringTable(strtab_offset + st_name_offset),
             raw_dec : st_name_offset.toString(),
             raw_hex : st_name_offset.toString(16),
             size_bytes : this.data_types.Elf_Word,
@@ -1164,7 +1281,7 @@ ELF.prototype.processElfSymbolTables = function(symbol_table_type) {
         };
         symtab_offset += this.data_types.Elf_Xword;
         
-        var symtab_entry = {
+        let symtab_entry = {
             st_name : st_name,
             st_bind : st_bind,
             st_type : st_type,
