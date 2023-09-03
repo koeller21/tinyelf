@@ -23,15 +23,21 @@ ELF.prototype.parseELF = function(arrayBuffer){
     }
     
     // check if file is lsb or msb
-    this.is_lsb = this.e_ident.EI_DATA.value == "ELFDATA2LSB" ? true : false;
+    this.is_lsb = this.e_ident.EI_DATA.value == "ELFDATA2LSB";
     // check if file is 64 or 32 bit architecture
-    this.is_64 = this.e_ident.EI_CLASS.value == "ELFCLASS64" ? true : false;
+    this.is_64 = this.e_ident.EI_CLASS.value == "ELFCLASS64";
     // assign correct data types depending on bit-architecture
     this.data_types = this.is_64 ? elf_base_types[64] : elf_base_types[32];
+
+
     
     this.elf_contents = {}
     this.elf_contents.e_ident = this.e_ident;
     this.elf_contents.elf_hdr = this.processElfHdr()
+
+    // check what architecture file is (just a convient shortcut, less typing)
+    this.architecture = this.elf_contents.elf_hdr.e_machine.value;
+
     this.elf_contents.elf_phdr = this.processElfPhdr()
     this.elf_contents.elf_shdr = this.processElfShdr();
     this.elf_contents.elf_dyn = this.processElfDyn();
@@ -991,11 +997,123 @@ ELF.prototype.processElfDyn64 = function(){
     
 }
 
-ELF.prototype.processElfRelocation32 = function(){
+ELF.prototype.getRelocType = function (r_info) {
+
+
+    /*
+    This member specifies the relocation type to apply. 
+    We do some bit shifting and bitwise operation to get the 
+    type. Also architecture dependant.
+    */
+
+    let r_type = null;
+    let r_type_value = null; // the actual relocation type
+    
+    if (this.is_64) {
+
+        switch (this.architecture) {
+            case "EM_MIPS" :
+                r_type = r_info.value & 0xff;
+                break;
+            case "EM_SPARCV9":
+                r_type = r_info.value & 0xff;
+                break;
+            default:
+                r_type = r_info.value & 0xffffffff;
+        }
+
+    }else {
+        r_type = r_info.value & 0xff;
+    }
+
+    if (r_type == null) {
+        return null;
+    }
+
+    switch (this.architecture) {
+        case "EM_MIPS" :
+            r_type_value = R_MIPS_TYPE[r_type];
+            break;
+        case "EM_SPARCV9":
+            r_type_value = R_SPARC_TYPE[r_type];
+            break;
+        default:
+            r_type_value = R_X86_64_TYPE[r_type];
+    }
+
+    const r_type_ret = {
+        value : r_type_value,
+        raw_dec : r_type.toString(),
+        raw_hex : r_type.toString(16),
+        size_bytes : null,
+        offset : null,
+        name : "r_type"
+    };
+
+    return r_type_ret;
 
 }
 
-ELF.prototype.processElfRelocation64 = function(){
+ELF.prototype.getRelocSymbol = function (r_info, symtab) {
+
+    let r_sym_idx = null;
+    let symtab_reloc_symbols = null;
+
+    if (this.is_64) {
+        r_sym_idx = r_info.value >> 32;
+    }else {
+        r_sym_idx = r_info.value >> 8;
+    }
+
+    // if either the index or the symtab is null, just return null
+    if (r_sym_idx == null || symtab == null) {
+        return null;
+    }
+
+    /*
+        We have to differentiate between different symbol tables,
+        Namely SHT_DYNSYM and SHT_SYMTAB.
+        The symbol refered to by r_sym_idx is in either of those.
+        Whether the symbol is in SHT_DYNSYM or in SHT_SYMTAB depends
+        ultimately on the type of section of the relocation:
+    
+        For Relocatable Files:
+
+        In the case of a relocatable object file (like your main.o), the index usually refers to the .symtab (Symbol Table). 
+        The .symtab contains both local and global symbols, and it's used by the linker to perform symbol resolution and relocation when combining relocatable object files.
+
+        For Executable and Shared Libraries:
+
+        For executables and shared libraries, the .dynsym (Dynamic Symbol Table) is typically used instead. 
+        This is because .dynsym is the symbol table for dynamic linking, containing only the symbols that are needed for relocation at runtime. 
+        .symtab could still exist, but it's often stripped to reduce the file size, and it's not used for dynamic linking. 
+        You'll often see sections like .rela.dyn and .rela.plt refer to indices in .dynsym.
+    */
+    if (symtab.sh_type.value == "SHT_DYNSYM") {
+        symtab_reloc_symbols = this.elf_contents.elf_dynsymtab;
+    } else if (symtab.sh_type.value == "SHT_SYMTAB") {
+        symtab_reloc_symbols = this.elf_contents.elf_symtab;
+    } else {
+        // if the symtab is neither of type SHT_DYNSYM nor of type SHT_SYMTAB, just return
+        return null;
+    }
+
+    // check that r_sym_idx is not geq than symbol table length - 1
+    if ( r_sym_idx >= symtab_reloc_symbols.length ) {
+        return null;
+    }
+
+    console.log(symtab_reloc_symbols[r_sym_idx].st_name);
+
+    return symtab_reloc_symbols[r_sym_idx].st_name;
+
+}
+
+ELF.prototype.processElfRelocation32 = function() {
+
+}
+
+ELF.prototype.processElfRelocation64 = function() {
     
     /*
     Relocation is the process of connecting symbolic references with symbolic definitions.  
@@ -1032,6 +1150,9 @@ ELF.prototype.processElfRelocation64 = function(){
         // get number of entries in relocation section
         let relocation_entries_number = reloc.section_header.sh_size.value / reloc.section_header.sh_entsize.value;
 
+        // we have to set the name here because the sh_type might be the same for multiple relocation section headers
+        // but the sh_name can be different
+        // e.g. .rela.dyn and .rela.plt might both be of sh_type SHT_RELA
         let relocation_entry = {
             sh_name : reloc.section_header.sh_name
         };
@@ -1078,6 +1199,16 @@ ELF.prototype.processElfRelocation64 = function(){
                 relocation_section_offset += this.data_types.Elf_Addr;
 
                 relocation_entry.section_content.r_info = r_info;
+
+                // get actual relocation type from r_info
+                relocation_entry.section_content.r_type = this.getRelocType(r_info);
+
+                // get actual symbol from r_info
+                // The sh_link field in the section header specifies the symbol table associated with the section. 
+                // For example, in a .rela.text section, the sh_link field will contain the index of the symbol table to be used for that specific section. 
+                // It's this index that decides whether to use .symtab or .dynsym.
+                relocation_entry.section_content.r_sym = this.getRelocSymbol(r_info, this.elf_contents.elf_shdr[reloc.section_header.sh_link.value]);
+
 
                 // SHT_RELA contains an addend additionally
                 if (reloc.sh_type == "SHT_RELA") {
