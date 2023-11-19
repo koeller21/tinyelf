@@ -44,7 +44,7 @@ ELF.prototype.parseELF = function(arrayBuffer){
     this.elf_contents.elf_symtab = this.processElfSymtab();
     this.elf_contents.elf_dynsymtab = this.processElfDynSymtab();
     this.elf_contents.elf_reloc = this.processElfRelocation();
-    
+    [this.elf_contents.elf_version_requirements, this.elf_contents.elf_version_requirements_auxillary] = this.processElfVersionRequirements();
     
 };
 
@@ -1103,8 +1103,6 @@ ELF.prototype.getRelocSymbol = function (r_info, symtab) {
         return null;
     }
 
-    console.log(symtab_reloc_symbols[r_sym_idx].st_name);
-
     return symtab_reloc_symbols[r_sym_idx].st_name;
 
 }
@@ -1237,6 +1235,222 @@ ELF.prototype.processElfRelocation64 = function() {
 }
 
 
+ELF.prototype.processVerneedAux32 = function(offset_base){
+
+}
+
+ELF.prototype.processVerneedAux64 = function(offset_base, previous_verneedaux_entries){
+
+    
+    let offset_entry = offset_base
+
+    // Dependency name hash value (ELF hash function).
+    const vna_hash = {
+        value : this.elfFile.getUint32(offset_entry, this.is_lsb),
+        raw_dec : this.elfFile.getUint32(offset_entry, this.is_lsb).toString(),
+        raw_hex : this.elfFile.getUint32(offset_entry, this.is_lsb).toString(16),
+        size_bytes : this.data_types.Elf_Word,
+        offset : offset_entry,
+        name : "vna_hash"
+    };
+    offset_entry += this.data_types.Elf_Word;
+
+    // Dependency information flag bitmask.
+    const vna_flags = {
+        value : this.elfFile.getUint16(offset_entry, this.is_lsb),
+        raw_dec : this.elfFile.getUint16(offset_entry, this.is_lsb).toString(),
+        raw_hex : this.elfFile.getUint16(offset_entry, this.is_lsb).toString(16),
+        size_bytes : this.data_types.Elf_Half,
+        offset : offset_entry,
+        name : "vna_flags"
+    };
+    offset_entry += this.data_types.Elf_Half;
+
+    // Object file version identifier used in the .gnu.version symbol version array. Bit number 15 controls whether or not the object is hidden; if this bit is set, the object cannot be used and the static linker will ignore the symbol's presence in the object.
+    const vna_other = {
+        value : this.elfFile.getUint16(offset_entry, this.is_lsb),
+        raw_dec : this.elfFile.getUint16(offset_entry, this.is_lsb).toString(),
+        raw_hex : this.elfFile.getUint16(offset_entry, this.is_lsb).toString(16),
+        size_bytes : this.data_types.Elf_Half,
+        offset : offset_entry,
+        name : "vna_other"
+    };
+    offset_entry += this.data_types.Elf_Half;
+
+    // Offset to the dependency name string in the section header, in bytes.
+    const vna_name = {
+        value : this.elfFile.getUint32(offset_entry, this.is_lsb),
+        raw_dec : this.elfFile.getUint32(offset_entry, this.is_lsb).toString(),
+        raw_hex : this.elfFile.getUint32(offset_entry, this.is_lsb).toString(16),
+        size_bytes : this.data_types.Elf_Word,
+        offset : offset_entry,
+        name : "vna_name"
+    };
+    offset_entry += this.data_types.Elf_Word;
+
+    // Offset to the next vernaux entry, in bytes.
+    const vna_next = {
+        value : this.elfFile.getUint32(offset_entry, this.is_lsb),
+        raw_dec : this.elfFile.getUint32(offset_entry, this.is_lsb).toString(),
+        raw_hex : this.elfFile.getUint32(offset_entry, this.is_lsb).toString(16),
+        size_bytes : this.data_types.Elf_Word,
+        offset : offset_entry,
+        name : "vna_next"
+    };
+    offset_entry += this.data_types.Elf_Word;
+
+    let verneedaux_entry = {
+        vna_hash : vna_hash,
+        vna_flags : vna_flags,
+        vna_other : vna_other,
+        vna_name : vna_name,
+        vna_next : vna_next
+    };
+
+    if ( Number(vna_next.raw_dec) != 0 ){
+        offset_base += Number(vna_next.raw_dec);
+        this.processVerneedAux(offset_base, previous_verneedaux_entries);
+    }
+
+    previous_verneedaux_entries.push(verneedaux_entry);
+
+    return previous_verneedaux_entries;
+}
+
+ELF.prototype.processElfVersionRequirements32 = function(){
+
+}
+
+ELF.prototype.processElfVersionRequirements64 = function(){
+    
+    /* 
+    All ELF objects may provide or depend on versioned symbols. Symbol Versioning is implemented by 3 section types: SHT_GNU_versym, SHT_GNU_verdef, and SHT_GNU_verneed.
+    */
+
+    let sym_version_information_sections = []
+
+    for(const section_header of this.elf_contents.elf_shdr){
+        if(
+            section_header.sh_type.value == "SHT_GNU_verdef" ||
+            section_header.sh_type.value == "SHT_GNU_verneed" ||
+            section_header.sh_type.value == "SHT_GNU_versym" 
+        ){
+            sym_version_information_sections[section_header.sh_type.value] = section_header
+        }
+    }
+
+    // check if SHT_GNU_verneed exists and if DT_VERNEED is set in dynamic section
+    if("SHT_GNU_verneed" in sym_version_information_sections && this.elf_contents.elf_dyn.some(item => item.d_tag.value === "DT_VERNEED")) {
+
+        let verneed_entries = [];
+        let verneedaux_entries = [];
+        
+        // check DT_VERNEEDNUM to figure out how many entries are there and loop through them
+        let verneednum = 1;
+        if(this.elf_contents.elf_dyn.some(item => item.d_tag.value === "DT_VERNEEDNUM")){
+            verneednum = this.elf_contents.elf_dyn.find(item => item.d_tag.value === 'DT_VERNEEDNUM').d_un.raw_dec;
+        }
+
+        // ToDo check if DT_VERNEEDNUM and sh_info of section header are the same
+
+        // get offset (these are dynamic offsets, so we have to update them iteratively)
+        let verneed_offset_base = sym_version_information_sections["SHT_GNU_verneed"].sh_offset.value;
+
+        for(let verneed_entry_count = 0; verneed_entry_count < verneednum; verneed_entry_count++){
+
+            let verneed_offset = verneed_offset_base
+
+            // Version of structure. This value is currently set to 1, and will be reset if the versioning implementation is incompatibly altered.
+            const vn_version = {
+                value : this.elfFile.getUint16(verneed_offset, this.is_lsb),
+                raw_dec : this.elfFile.getUint16(verneed_offset, this.is_lsb).toString(),
+                raw_hex : this.elfFile.getUint16(verneed_offset, this.is_lsb).toString(16),
+                size_bytes : this.data_types.Elf_Half,
+                offset : verneed_offset,
+                name : "vn_version"
+            };
+            verneed_offset += this.data_types.Elf_Half;
+
+            // Number of associated verneed array entries.
+            const vn_cnt = {
+                value : this.elfFile.getUint16(verneed_offset, this.is_lsb),
+                raw_dec : this.elfFile.getUint16(verneed_offset, this.is_lsb).toString(),
+                raw_hex : this.elfFile.getUint16(verneed_offset, this.is_lsb).toString(16),
+                size_bytes : this.data_types.Elf_Half,
+                offset : verneed_offset,
+                name : "vn_cnt"
+            };
+            verneed_offset += this.data_types.Elf_Half;
+
+            // Offset to the file name string in the section header, in bytes.
+            const vn_file = {
+                value : this.elfFile.getUint16(verneed_offset, this.is_lsb),
+                raw_dec : this.elfFile.getUint16(verneed_offset, this.is_lsb).toString(),
+                raw_hex : this.elfFile.getUint16(verneed_offset, this.is_lsb).toString(16),
+                size_bytes : this.data_types.Elf_Word,
+                offset : verneed_offset,
+                name : "vn_file"
+            };
+            verneed_offset += this.data_types.Elf_Word;
+
+            // ToDo follow sh_link of SHT_GNU_verneed section to actually get file name
+
+            // Offset to a corresponding entry in the vernaux array, in bytes.
+            const vn_aux = {
+                value : this.elfFile.getUint16(verneed_offset, this.is_lsb),
+                raw_dec : this.elfFile.getUint16(verneed_offset, this.is_lsb).toString(),
+                raw_hex : this.elfFile.getUint16(verneed_offset, this.is_lsb).toString(16),
+                size_bytes : this.data_types.Elf_Word,
+                offset : verneed_offset,
+                name : "vn_aux"
+            };
+            verneed_offset += this.data_types.Elf_Word;
+
+            // ToDo get verneed auxillary entry
+            let verneed_aux_offset = verneed_offset_base + Number(vn_aux.raw_dec);
+            verneedaux_entries = this.processVerneedAux(verneed_aux_offset, verneedaux_entries);
+
+            // Offset to the next verneed entry, in bytes.
+            const vn_next = {
+                value : this.elfFile.getUint16(verneed_offset, this.is_lsb),
+                raw_dec : this.elfFile.getUint16(verneed_offset, this.is_lsb).toString(),
+                raw_hex : this.elfFile.getUint16(verneed_offset, this.is_lsb).toString(16),
+                size_bytes : this.data_types.Elf_Word,
+                offset : verneed_offset,
+                name : "vn_next"
+            };
+            verneed_offset += this.data_types.Elf_Word;
+
+            let verneed_entry = {
+                vn_version : vn_version,
+                vn_cnt : vn_cnt,
+                vn_file : vn_file,
+                vn_aux : vn_aux,
+                vn_next : vn_next
+            };
+            
+            verneed_entries.push(verneed_entry);
+
+            verneed_offset_base += Number(vn_next.raw_dec);
+
+        }
+
+        return [verneed_entries, verneedaux_entries]
+    }
+
+    // check if SHT_GNU_verdef exists and if DT_VERDEF is set in dynamic section
+    if("SHT_GNU_verdef" in sym_version_information_sections && this.elf_contents.elf_dyn.some(item => item.d_tag.value === 'DT_VERDEF')) {
+        // parse version required
+        console.log("3");
+    }
+
+    // check if SHT_GNU_versym exists and if DT_VERSYM is set in dynamic section
+    if("SHT_GNU_versym" in sym_version_information_sections && this.elf_contents.elf_dyn.some(item => item.d_tag.value === 'DT_VERSYM')) {
+        // parse version symbols
+        console.log("1");
+    }
+    
+}
 
 ELF.prototype.processElfDynSymtab32 = function(){
     
@@ -1433,7 +1647,7 @@ ELF.prototype.processElfSymbolTables = function(symbol_table_type) {
 which contains the symbol binding and symbol type.  The STB_ and STT_
 defines identify the binding and type.  */
 
-ELF.prototype.processByClass = function(functionPrefix) {
+ELF.prototype.processByClass = function(functionPrefix, ...args) {
     
     const processorSuffix = this.e_ident.EI_CLASS.value == "ELFCLASS64" ? "64" : "32";
     const processorName = `${functionPrefix}${processorSuffix}`;
@@ -1441,7 +1655,7 @@ ELF.prototype.processByClass = function(functionPrefix) {
     const processor = this[processorName];
     
     if (processor && typeof processor === 'function') {
-        return processor.call(this);
+        return processor.call(this, ...args);
     } else {
         const err = new Error(`Unsupported processor for EI_CLASS '${this.e_ident.EI_CLASS.value}' and prefix '${functionPrefix}'`)
         throw err;
@@ -1476,6 +1690,13 @@ ELF.prototype.processElfRelocation = function() {
     return this.processByClass("processElfRelocation");
 };
 
+ELF.prototype.processElfVersionRequirements = function() {
+    return this.processByClass("processElfVersionRequirements");
+};
+
+ELF.prototype.processVerneedAux = function(...args) {
+    return this.processByClass("processVerneedAux", ...args);
+};
 
 
 ELF.prototype.getFlagName = function(bitmask, currentFlag, flags) {

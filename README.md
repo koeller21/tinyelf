@@ -1,19 +1,23 @@
-# :elf: elfparse
-
-This repository contains the source code for a pure javascript ELF-Parser that runs in your browser client-side.
-
-Live Demo here:
+<div align="center">
 
 
-# Table of Contents
+An ELF binary parser written in pure Javascript. Why? idk
 
-- What is elfparse?
-- Why elfparse?
-- License 
+<h3>
+
+[Live Showcase]() | [Usage]() | [Features]()
+
+</h3>
 
 
-# What is elfparse?
+</div>
 
-# Why elfparse?
+---
 
-# License 
+# Using elfparse
+
+# Features
+
+# License
+
+MIT
