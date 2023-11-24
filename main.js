@@ -177,8 +177,8 @@ function handleFiles() {
     .run(this.files[0])
     .then((result) => {
         console.log(result);
-        create_prologue(result);
-        create_table(result);
+        // create_prologue(result);
+        // create_table(result);
     })
     .catch((error) => {
         console.error(error);
