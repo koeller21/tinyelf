@@ -22,16 +22,14 @@ Called tinyelf because I've taken inspiration from <a href="">tinygrad</a>. Also
 
 - Compared to <a href="https://github.com/xyproto/elfinfo">elfinfo</a>, this is a full blown elf parser library
 - Compared to <a href="https://github.com/indutny/elfy">elfy</a>, it supports parsing various section headers such as SHT_DYNSYM, SHT_REL/A/R, SHT_GNU_ver*, ...
-- 
-- 
-
+- Compared to readelf
 
 ---
 
-# Using elfparse
+## Using elfparse
 
-# Features
+## Features
 
-# License
+## License
 
 MIT
