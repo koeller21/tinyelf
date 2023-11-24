@@ -1,19 +1,32 @@
 {
-  "name": "elfparse",
-  "version": "1.0.0",
-  "description": "a pure javascript library to parse ELF binaries",
-  "main": "elf.js",
+  "name": "tinyelf",
+  "version": "0.0.1",
+  "description": "A tiny but mighty ELF binary parser written in pure Javascript",
+  "main": "tinyelf.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "keywords": [
+    "elf",
+    "binary",
+    "parser",
+    "executable",
+    "x86",
+    "x86-64",
+    "x86_64",
+    "ARM",
+    "linux",
+    "unix",
+    "tinyelf"
+  ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/koeller21/elfparse.git"
+    "url": "git+https://github.com/koeller21/tinyelf.git"
   },
   "author": "Arne Koeller",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/koeller21/elfparse/issues"
+    "url": "https://github.com/koeller21/tinyelf/issues"
   },
-  "homepage": "https://github.com/koeller21/elfparse#readme"
+  "homepage": "https://github.com/koeller21/tinyelf#readme"
 }
