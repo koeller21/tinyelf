@@ -12,83 +12,50 @@ https://docs.oracle.com/cd/E19683-01/816-1386/index.html
 
 */
 
+// Exports
+export {
+    ElfFile,
+    EIdentEntries,
+    Elf_Ehdr,
+    ElfBase,
+    Elf32Types,
+    Elf64Types,
+    e_ident,
+    elf_hdr,
+    ElfBitVersion,
+    ElfEndianness
+}
+
 /*
 Basic elf data types in bytes
 */
 
-type char           = number; // 1 byte
-
-type Elf32_Half     = number; // 2 bytes
-type Elf32_Word     = number; // 4 bytes
-type Elf32_Addr     = number; // 4 bytes
-type Elf32_Off      = number; // 4 bytes
-type Elf32_Sword    = number; // 4 bytes signed
-
-type Elf64_Half     = Elf32_Half;   // 2 bytes
-type Elf64_SHalf    = Elf32_Half;   // 2 bytes sgined
-type Elf64_Word     = number;       // 4 bytes
-type Elf64_Sword    = number;       // 4 bytes signed
-type Elf64_Xword    = number;       // 8 bytes
-type Elf64_Sxword   = number;       // 8 bytes signed
-type Elf64_Addr     = number;       // 8 bytes
-type Elf64_Off      = number;       // 8 bytes
-
-
-// Define interfaces for 32-bit and 64-bit ELF base types
-interface Elf32BaseTypes {
-    char: char;
-    Elf_Addr: Elf32_Addr;
-    Elf_Half: Elf32_Half;
-    Elf_Off: Elf32_Off;
-    Elf_Sword: Elf32_Sword; // signed
-    Elf_Word: Elf32_Word;
-}
-
-interface Elf64BaseTypes {
-    char: char;
-    Elf_Addr: Elf64_Addr;
-    Elf_Half: Elf64_Half;
-    Elf_SHalf: Elf64_SHalf; // signed
-    Elf_Off: Elf64_Off;
-    Elf_Sword: Elf64_Sword; // signed
-    Elf_Word: Elf64_Word;
-    Elf_Xword: Elf64_Xword;
-    Elf_Sxword: Elf64_Sxword; // signed
-}
-
 // bit size of architecture (32=32bit, 64=64bit)
 type ElfBitVersion = 32 | 64;
 
-// endianness data format type (null=unknown, true=LSB, false=MSB)
+// endianness data format type (undefined=unknown, true=LSB, false=MSB)
 type ElfEndianness = undefined | true | false;
 
-type ElfBaseTypes = Elf32BaseTypes | Elf64BaseTypes;
-
-// Define the ElfBaseTypes object with explicit types
-const ElfBaseTypes = {
-    32: {
-        char: 1,
-        Elf_Half: 2,
-        Elf_Addr: 4,
-        Elf_Off: 4,
-        Elf_Sword: 4,
-        Elf_Word: 4
-    },
-    64: {
-        char: 1,
-        Elf_Half: 2,
-        Elf_SHalf: 2,
-        Elf_Sword: 4,
-        Elf_Word: 4,
-        Elf_Off: 8,
-        Elf_Addr: 8,
-        Elf_Xword: 8,
-        Elf_Sxword: 8
-    }
+enum Elf32Types {
+    char        = 1,
+    Elf_Half    = 2,
+    Elf_Addr    = 4,
+    Elf_Off     = 4,
+    Elf_Sword   = 4,
+    Elf_Word    = 4
 };
 
-// EI_NIDENT is typically defined as 16
-const EI_NIDENT = 16;
+enum Elf64Types {
+    char        = 1,
+    Elf_Half    = 2,
+    Elf_SHalf   = 2,
+    Elf_Sword   = 4,
+    Elf_Word    = 4,
+    Elf_Off     = 8,
+    Elf_Addr    = 8,
+    Elf_Xword   = 8,
+    Elf_Sxword  = 8
+};
 
 interface ElfData {
     name: String;
@@ -99,18 +66,23 @@ interface ElfData {
     offset: number; // from file beginning
 };
 
+
+interface ElfFile {
+    elfHeader : Elf_Ehdr;
+};
+
 type EIdentEntries = {
-    EI_MAG0: ElfData;
-    EI_MAG1: ElfData;
-    EI_MAG2: ElfData;
-    EI_MAG3: ElfData;
-    EI_CLASS: ElfData;
-    EI_DATA: ElfData,
-    EI_VERSION: ElfData,
-    EI_OSABI: ElfData,
-    EI_ABIVERSION: ElfData,
-    EI_PAD: ElfData,
-    EI_NIDENT: ElfData
+    EI_MAG0     : ElfData;
+    EI_MAG1     : ElfData;
+    EI_MAG2     : ElfData;
+    EI_MAG3     : ElfData;
+    EI_CLASS    : ElfData;
+    EI_DATA     : ElfData,
+    EI_VERSION  : ElfData,
+    EI_OSABI    : ElfData,
+    EI_ABIVERSION   : ElfData,
+    EI_PAD      : ElfData,
+    EI_NIDENT   : ElfData
 };
 
 interface Elf_Ehdr {
@@ -135,7 +107,6 @@ abstract class ElfBase {
     readonly data: DataView;
     endianness: ElfEndianness = true; // assuming its LSB first
     bit : ElfBitVersion = 32; // assuming its 32 bit first
-    dataTypes : ElfBaseTypes;
 
     constructor(data : DataView) {
         this.data = data;
@@ -143,7 +114,7 @@ abstract class ElfBase {
 
 }
 
-class ElfDataReader extends ElfBase{
+export class ElfDataReader extends ElfBase{
     
     private offset: number = 0;
 
@@ -181,12 +152,12 @@ class ElfDataReader extends ElfBase{
         // 32 bit
         if (this.bit == 32) {
             switch (size) {
-                case ElfBaseTypes[32].char      : return this.data.getUint8(this.offset);
-                case ElfBaseTypes[32].Elf_Half  : return this.data.getUint16(this.offset, this.endianness);
-                case ElfBaseTypes[32].Elf_Word  : return this.data.getUint32(this.offset, this.endianness);
-                case ElfBaseTypes[32].Elf_Addr  : return this.data.getUint32(this.offset, this.endianness);
-                case ElfBaseTypes[32].Elf_Off   : return this.data.getUint32(this.offset, this.endianness);
-                case ElfBaseTypes[32].Elf_Sword : return this.data.getInt32(this.offset, this.endianness);
+                case Elf32Types.char      : return this.data.getUint8(this.offset);
+                case Elf32Types.Elf_Half  : return this.data.getUint16(this.offset, this.endianness);
+                case Elf32Types.Elf_Word  : return this.data.getUint32(this.offset, this.endianness);
+                case Elf32Types.Elf_Addr  : return this.data.getUint32(this.offset, this.endianness);
+                case Elf32Types.Elf_Off   : return this.data.getUint32(this.offset, this.endianness);
+                case Elf32Types.Elf_Sword : return this.data.getInt32(this.offset, this.endianness);
                 // Add other cases as needed
                 default: throw new Error(`No 32-bit read method for size ${size}`);
             }
@@ -194,158 +165,21 @@ class ElfDataReader extends ElfBase{
         } else {
             // 64 bit
             switch (size) {
-                case ElfBaseTypes[64].char      : return this.data.getUint8(this.offset);
-                case ElfBaseTypes[64].Elf_Half  : return this.data.getUint16(this.offset, this.endianness);
-                case ElfBaseTypes[64].Elf_SHalf : return this.data.getInt16(this.offset, this.endianness);
-                case ElfBaseTypes[64].Elf_Word  : return this.data.getUint32(this.offset, this.endianness);
-                case ElfBaseTypes[64].Elf_Sword : return this.data.getInt32(this.offset, this.endianness);
-                case ElfBaseTypes[64].Elf_Addr  : return Number(this.data.getBigUint64(this.offset, this.endianness));
-                case ElfBaseTypes[64].Elf_Off   : return Number(this.data.getBigUint64(this.offset, this.endianness));
-                case ElfBaseTypes[64].Elf_Xword : return Number(this.data.getBigUint64(this.offset, this.endianness));
-                case ElfBaseTypes[64].Elf_Sxword : return Number(this.data.getBigInt64(this.offset, this.endianness));
+                case Elf64Types.char      : return this.data.getUint8(this.offset);
+                case Elf64Types.Elf_Half  : return this.data.getUint16(this.offset, this.endianness);
+                case Elf64Types.Elf_SHalf : return this.data.getInt16(this.offset, this.endianness);
+                case Elf64Types.Elf_Word  : return this.data.getUint32(this.offset, this.endianness);
+                case Elf64Types.Elf_Sword : return this.data.getInt32(this.offset, this.endianness);
+                case Elf64Types.Elf_Addr  : return Number(this.data.getBigUint64(this.offset, this.endianness));
+                case Elf64Types.Elf_Off   : return Number(this.data.getBigUint64(this.offset, this.endianness));
+                case Elf64Types.Elf_Xword : return Number(this.data.getBigUint64(this.offset, this.endianness));
+                case Elf64Types.Elf_Sxword : return Number(this.data.getBigInt64(this.offset, this.endianness));
                 // Add other cases as needed
                 default: throw new Error(`No 64-bit read method for size ${size}`);
             }
         }
     }
 
-}
-
-class Ehdr extends ElfBase{
-
-    header: Elf_Ehdr;
-
-    constructor(data: DataView) {
-        super(data);
-
-        this.header.e_ident = this.parse_e_ident();
-        this.bit = ((this.header.e_ident.EI_CLASS.value == "ELFCLASS32") ? 32 : 64) as ElfBitVersion;
-        this.endianness = (this.header.e_ident.EI_DATA.value == "ELFDATA2LSB") as ElfEndianness;
-        this.dataTypes = this.endianness ? ElfBaseTypes[32] : ElfBaseTypes[64];
-
-        this.parse_ehdr();
-    }
-
-    private parse_e_ident(): EIdentEntries {
-
-        const dataReader = new ElfDataReader(this.data, 0);
-
-        /*
-        The first byte of the magic number.  It must be filled with ELFMAG0.  (0: 0x7f)
-        */
-        const EI_MAG0 = dataReader.readData("EI_MAG0", ElfBaseTypes[32].char);
-        
-        /*
-        The second byte of the magic number.  It must be filled with ELFMAG1.  (1: 'E')
-        */
-        const EI_MAG1 = dataReader.readData("EI_MAG1", ElfBaseTypes[32].char);
-
-        /*
-        The third byte of the magic number.  It must be filled with ELFMAG2.  (2: 'L')
-        */
-        const EI_MAG2 = dataReader.readData("EI_MAG2", ElfBaseTypes[32].char);
-
-        /*
-        The fourth byte of the magic number.  It must be filled with ELFMAG3.  (3: 'F')
-        */
-        const EI_MAG3 = dataReader.readData("EI_MAG3", ElfBaseTypes[32].char);
-
-        // check if magic numbers are correct, if not, abort
-        if (EI_MAG0.value != 127 || EI_MAG1.value != 69 || EI_MAG2.value != 76 || EI_MAG3.value != 70) {
-            const err = new Error("This does not appear to be an ELF-Binary - Magic numbers are wrong");
-            throw err;
-        }
-
-        /*
-        ToDo:
-        readelf.c:check_magic_number checks for other file types (e.g. llvm and go)
-        and suggest other tools - maybe do the same here!
-        */
-
-        /*
-        The fifth byte identifies the architecture (32 vs 65 bit) for this binary:
-        */
-        const EI_CLASS = dataReader.readData("EI_CLASS", ElfBaseTypes[32].char, e_ident.EI_CLASS);
-
-        // check if class is invalid, if yes, abort
-        if (EI_CLASS.value == "ELFCLASSNONE" || EI_CLASS.value == null) {
-            const err = new Error("None or invalid ELF-File Class: " + EI_CLASS.value);
-            throw err;
-        }
-
-        /*
-        The sixth byte specifies the data encoding of the processor-specific data in the file.
-        */
-        const EI_DATA = dataReader.readData("EI_DATA", ElfBaseTypes[32].char, e_ident.EI_DATA);
-
-        // check if data encoding is invalid, if yes, abort
-        if (EI_DATA.value == "ELFDATANONE" || EI_DATA.value == null) {
-            const err = new Error("None or invalid ELF-File Data Encoding: " + EI_DATA.value);
-            throw err;
-        }
-
-        /*
-        The seventh byte is the version number of the ELF specification:
-        */
-        const EI_VERSION = dataReader.readData("EI_VERSION", ElfBaseTypes[32].char, e_ident.EI_VERSION);
-
-        /*
-        The  eighth byte identifies the operating system and ABI to which the
-        object is targeted. Some fields in other ELF structures have flags
-        and values that have platform-specific meanings; the interpretation
-        of those fields is determined by the value of this byte.
-        */
-        const EI_OSABI = dataReader.readData("EI_OSABI", ElfBaseTypes[32].char, e_ident.EI_OSABI);
-
-        /*
-        The ninth byte identifies the version of the ABI to which the
-        object is targeted. This field is used to distinguish among
-        incompatible versions of an  ABI. The  interpretation  of
-        this version number is dependent on the ABI identified by the
-        EI_OSABI field. Applications conforming to this specification use the value 0
-        */
-        const EI_ABIVERSION = dataReader.readData("EI_ABIVERSION", ElfBaseTypes[32].char);
-
-        /*
-        Start of padding. These bytes are reserved and set to zero.
-        Programs which read them should ignore them.
-        The value for EI_PAD will change in the future if currently unused bytes
-        are given meanings.
-        */
-        const EI_PAD = dataReader.readData("EI_PAD", 6);
-
-        /*
-        The size of the e_ident array.
-        */
-        const EI_NIDENT = dataReader.readData("EI_NIDENT", 1);
-
-        let e_ident_entries : EIdentEntries = {
-            EI_MAG0         : EI_MAG0,
-            EI_MAG1         : EI_MAG1,
-            EI_MAG2         : EI_MAG2,
-            EI_MAG3         : EI_MAG3,
-            EI_CLASS        : EI_CLASS,
-            EI_DATA         : EI_DATA,
-            EI_VERSION      : EI_VERSION,
-            EI_OSABI        : EI_OSABI,
-            EI_ABIVERSION   : EI_ABIVERSION,
-            EI_PAD          : EI_PAD,
-            EI_NIDENT       : EI_NIDENT
-        };
-
-        return e_ident_entries;
-    }
-
-    private parse_ehdr() {
-
-        const dataReader = new ElfDataReader(this.data, EI_NIDENT);
-
-        /* This member of the structure identifies the object file type */
-        const e_type = dataReader.readData("e_type", this.dataTypes.Elf_Addr, elf_hdr.e_type);
-
-
-
-    }
 }
 
 const e_ident = {
@@ -740,8 +574,6 @@ const elf_hdr = {
         
     },
     
-    
-    "PN_XNUM" : 0xffff, /* Extended numbering */
     
     /*
     A section  header table index is a subscript into this array. Some section header table indices 
