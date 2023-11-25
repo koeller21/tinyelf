@@ -1,6 +1,6 @@
 {
   "name": "tinyelf",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "A tiny but mighty ELF binary parser written in pure Javascript",
   "main": "tinyelf.js",
   "scripts": {

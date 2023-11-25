@@ -1,16 +1,34 @@
 class TinyELF {
+
+    file: File;
+    is_lsb: boolean;
+    is_64: boolean;
+    data_types : ElfBaseTypes;
+    elfFile : DataView;
+    file_length : number;
+
+    constructor(file) {
+
+        // Check if 'file' is provided and is a valid object
+        if (!file || typeof file !== 'object') {
+            throw new Error('Invalid file provided.');
+        }
+
+        this.file = file;
+
+    }
+
+    async init() {
+        await this.#run(this.file);
+    }
     
-    async run(file) {
-
-        this.file_name = file.name;
-        this.file_last_modified = file.lastModified;
-
-        const arrayBuffer = await this.loadFile(file);
-        this.parseELF(arrayBuffer);
+    async #run(file) {
+        const arrayBuffer = await this.#loadFile(file);
+        this.#parseELF(arrayBuffer);
         return this;
     }
 
-    loadFile(file) {
+    #loadFile(file) {
         return new Promise((resolve) => {
             const reader = new FileReader();
             reader.readAsArrayBuffer(file);
@@ -20,14 +38,14 @@ class TinyELF {
         });
     }
 
-    parseELF(arrayBuffer) {
+    #parseELF(arrayBuffer) {
 
         this.file_length = arrayBuffer.byteLength;
 
         this.elfFile = new DataView(arrayBuffer, 0, arrayBuffer.byteLength);
 
         try {
-            this.e_ident = this.processEIdent();
+            this.e_ident = this.#processEIdent();
         } catch (error) {
             console.log(error);
         }
@@ -37,28 +55,28 @@ class TinyELF {
         // check if file is 64 or 32 bit architecture
         this.is_64 = this.e_ident.EI_CLASS.value == "ELFCLASS64";
         // assign correct data types depending on bit-architecture
-        this.data_types = this.is_64 ? elf_base_types[64] : elf_base_types[32];
+        this.data_types = this.is_64 ? ElfBaseTypes[64] : ElfBaseTypes[32];
 
 
         this.elf_contents = {};
         this.elf_contents.e_ident = this.e_ident;
-        this.elf_contents.elf_hdr = this.processElfHdr();
+        this.elf_contents.elf_hdr = this.#processElfHdr();
 
         // check what architecture file is (just a convient shortcut, less typing)
         this.architecture = this.elf_contents.elf_hdr.e_machine.value;
 
-        this.elf_contents.elf_phdr = this.processElfPhdr();
-        this.elf_contents.elf_shdr = this.processElfShdr();
-        this.elf_contents.elf_dyn = this.processElfDyn();
-        this.elf_contents.elf_symtab = this.processElfSymtab();
-        this.elf_contents.elf_dynsymtab = this.processElfDynSymtab();
-        this.elf_contents.elf_reloc = this.processElfRelocation();
-        [this.elf_contents.elf_version_requirements, this.elf_contents.elf_version_requirements_auxillary] = this.processElfVersionRequirements();
-        [this.elf_contents.elf_version_definitions, this.elf_contents.elf_version_definitions_auxillary] = this.processElfVersionDefinitions();
+        this.elf_contents.elf_phdr = this.#processElfPhdr();
+        this.elf_contents.elf_shdr = this.#processElfShdr();
+        this.elf_contents.elf_dyn = this.#processElfDyn();
+        this.elf_contents.elf_symtab = this.#processElfSymtab();
+        this.elf_contents.elf_dynsymtab = this.#processElfDynSymtab();
+        this.elf_contents.elf_reloc = this.#processElfRelocation();
+        [this.elf_contents.elf_version_requirements, this.elf_contents.elf_version_requirements_auxillary] = this.#processElfVersionRequirements();
+        [this.elf_contents.elf_version_definitions, this.elf_contents.elf_version_definitions_auxillary] = this.#processElfVersionDefinitions();
 
     }
 
-    processEIdent() {
+    #processEIdent() {
 
         let eident_offset = 0;
 
@@ -255,10 +273,10 @@ class TinyELF {
         };
     }
 
-    processElfHdr32() {
+    #processElfHdr32() {
     }
 
-    processElfHdr64() {
+    #processElfHdr64() {
 
         let hdr_offset = 16;
 
@@ -495,10 +513,10 @@ class TinyELF {
         };
     }
 
-    processElfPhdr32() {
+    #processElfPhdr32() {
     }
 
-    processElfPhdr64() {
+    #processElfPhdr64() {
 
         let phdr_entries = [];
 
@@ -642,7 +660,7 @@ class TinyELF {
 
     }
 
-    getStringFromStringTable(offset) {
+    #getStringFromStringTable(offset) {
 
         // Initialize an array to store the characters
         let chars = [];
@@ -668,12 +686,13 @@ class TinyELF {
         // Join the characters into a string and return the result
         return chars.join("");
     }
-    processElfShdr32() {
+    #processElfShdr32() {
         // elf32_shdr and elf64_shdr structs are, member-order-wise, exactly the same
         // so we can just re-use the 64-bit function
         return this.processElfShdr64();
     }
-    processElfShdr64() {
+
+    #processElfShdr64() {
 
         /*
         Get .shstrtab-section offset so we can resolve sh_name
@@ -864,7 +883,7 @@ class TinyELF {
 
     }
 
-    assignFlagValues(d_tag, d_un) {
+    #assignFlagValues(d_tag, d_un) {
 
         if (d_tag.value == "DT_FLAGS") {
             // DT_FLAGS
@@ -887,7 +906,7 @@ class TinyELF {
 
     }
 
-    parseFlagBits(flag_type, d_un_val) {
+    #parseFlagBits(flag_type, d_un_val) {
 
         let flags = [];
 
@@ -922,10 +941,10 @@ class TinyELF {
         return flags;
     }
 
-    processElfDyn32() {
+    #processElfDyn32() {
     }
 
-    processElfDyn64() {
+    #processElfDyn64() {
         /*
         The .dynamic section contains a series of structures
         that hold relevant dynamic linking information.
@@ -994,7 +1013,7 @@ class TinyELF {
 
     }
 
-    getRelocType(r_info) {
+    #getRelocType(r_info) {
         /*
         This member specifies the relocation type to apply.
         We do some bit shifting and bitwise operation to get the
@@ -1050,7 +1069,7 @@ class TinyELF {
 
     }
 
-    getRelocSymbol(r_info, symtab) {
+    #getRelocSymbol(r_info, symtab) {
 
         let r_sym_idx = null;
         let symtab_reloc_symbols = null;
@@ -1103,10 +1122,10 @@ class TinyELF {
 
     }
 
-    processElfRelocation32() {
+    #processElfRelocation32() {
     }
 
-    processElfRelocation64() {
+    #processElfRelocation64() {
         /*
         Relocation is the process of connecting symbolic references with symbolic definitions.
         Relocatable files must have information that describes how to modify their section contents, thus allowing
@@ -1226,10 +1245,10 @@ class TinyELF {
 
     }
 
-    processVerneedAux32(offset_base) {
+    #processVerneedAux32(offset_base) {
     }
 
-    processVerneedAux64(offset_base, previous_verneedaux_entries) {
+    #processVerneedAux64(offset_base, previous_verneedaux_entries) {
 
 
         let offset_entry = offset_base;
@@ -1299,7 +1318,7 @@ class TinyELF {
 
         if (Number(vna_next.raw_dec) != 0) {
             offset_base += Number(vna_next.raw_dec);
-            this.processVerneedAux(offset_base, previous_verneedaux_entries);
+            this.#processVerneedAux(offset_base, previous_verneedaux_entries);
         }
 
         previous_verneedaux_entries.push(verneedaux_entry);
@@ -1307,10 +1326,10 @@ class TinyELF {
         return previous_verneedaux_entries;
     }
 
-    processElfVersionRequirements32() {
+    #processElfVersionRequirements32() {
     }
 
-    processElfVersionRequirements64() {
+    #processElfVersionRequirements64() {
         /*
         All ELF objects may provide or depend on versioned symbols. Symbol Versioning is implemented by 3 section types: SHT_GNU_versym, SHT_GNU_verdef, and SHT_GNU_verneed.
         This method handels section type: SHT_GNU_verneed.
@@ -1443,10 +1462,10 @@ class TinyELF {
 
     }
 
-    processVerdAux32(offset_base) {
+    #processVerdAux32(offset_base, previous_verdaux_entries) {
     }
 
-    processVerdAux64(offset_base, previous_verdaux_entries) {
+    #processVerdAux64(offset_base, previous_verdaux_entries) {
 
 
         let offset_entry = offset_base;
@@ -1488,10 +1507,10 @@ class TinyELF {
         return previous_verdaux_entries;
     }
 
-    processElfVersionDefinitions32() {
+    #processElfVersionDefinitions32() {
     }
 
-    processElfVersionDefinitions64() {
+    #processElfVersionDefinitions64() {
         /*
         All ELF objects may provide or depend on versioned symbols. Symbol Versioning is implemented by 3 section types: SHT_GNU_versym, SHT_GNU_verdef, and SHT_GNU_verneed.
         This method handels section type: SHT_GNU_verdef.
@@ -1647,22 +1666,21 @@ class TinyELF {
 
     }
 
-    processElfDynSymtab32() {
+    #processElfDynSymtab32() {
     }
 
-    processElfDynSymtab64() {
+    #processElfDynSymtab64() {
         return this.processElfSymbolTables("SHT_DYNSYM");
     }
 
-    processElfSymtab32() {
+    #processElfSymtab32() {
     }
 
-    processElfSymtab64() {
+    #processElfSymtab64() {
         return this.processElfSymbolTables("SHT_SYMTAB");
-
     }
 
-    processElfSymbolTables(symbol_table_type) {
+    #processElfSymbolTables(symbol_table_type) {
 
         let symtab = null;
         let strtab_offset = 0; // strtab used for symtab st_name
@@ -1838,7 +1856,7 @@ class TinyELF {
     /* These functions disassemble and assemble a symbol table st_info field,
     which contains the symbol binding and symbol type.  The STB_ and STT_
     defines identify the binding and type.  */
-    processByClass(functionPrefix, ...args) {
+    #processByClass(functionPrefix, ...args) {
 
         const processorSuffix = this.e_ident.EI_CLASS.value == "ELFCLASS64" ? "64" : "32";
         const processorName = `${functionPrefix}${processorSuffix}`;
@@ -1853,55 +1871,55 @@ class TinyELF {
         }
     }
 
-    processElfHdr() {
+    #processElfHdr() {
         return this.processByClass("processElfHdr");
     }
 
-    processElfPhdr() {
+    #processElfPhdr() {
         return this.processByClass("processElfPhdr");
     }
 
-    processElfShdr() {
+    #processElfShdr() {
         return this.processByClass("processElfShdr");
     }
 
-    processElfDyn() {
+    #processElfDyn() {
         return this.processByClass("processElfDyn");
     }
 
-    processElfSymtab() {
+    #processElfSymtab() {
         return this.processByClass("processElfSymtab");
     }
 
-    processElfDynSymtab() {
+    #processElfDynSymtab() {
         return this.processByClass("processElfDynSymtab");
     }
 
-    processElfRelocation() {
+    #processElfRelocation() {
         return this.processByClass("processElfRelocation");
     }
 
-    processElfVersionRequirements() {
+    #processElfVersionRequirements() {
         return this.processByClass("processElfVersionRequirements");
     }
 
-    processVerneedAux(...args) {
+    #processVerneedAux(...args) {
         return this.processByClass("processVerneedAux", ...args);
     }
 
-    processElfVersionDefinitions() {
+    #processElfVersionDefinitions() {
         return this.processByClass("processElfVersionDefinitions");
     }
 
-    processVerdAux(...args) {
+    #processVerdAux(...args) {
         return this.processByClass("processVerdAux", ...args);
     }
 
-    getFlagName(bitmask, currentFlag, flags) {
+    #getFlagName(bitmask, currentFlag, flags) {
         return (bitmask & currentFlag) !== 0 ? flags[currentFlag] : null;
     }
 
-    getSetFlags(bitmask, flags) {
+    #getSetFlags(bitmask, flags) {
         const setFlags = [];
         for (const currentFlag in flags) {
             const flagName = this.getFlagName(bitmask, currentFlag, flags);
@@ -1917,5 +1935,7 @@ class TinyELF {
 
 
 // export class
-module.exports = TinyELF;
+module.exports = {
+    TinyELF
+};
 
