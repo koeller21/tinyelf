@@ -1,23 +1,25 @@
 import {
+    e_ident,
+    elf_hdr,
+} from "./constants/common";
+
+import {
     Elf_Ehdr, 
     ElfBase, 
     ElfDataReader, 
     EIdentEntries, 
     Elf32Types, 
     Elf64Types,
-    e_ident,
-    elf_hdr,
     ElfBitVersion,
     ElfEndianness
-} from "./constants/common";
+} from "./ElfBase";
 
 // EI_NIDENT is typically defined as 16
 const EI_NIDENT = 16;
 
-
 export class ElfHeader extends ElfBase{
 
-    header: Elf_Ehdr;
+    header!: Elf_Ehdr;
 
     constructor(data: DataView) {
         super(data);

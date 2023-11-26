@@ -14,173 +14,10 @@ https://docs.oracle.com/cd/E19683-01/816-1386/index.html
 
 // Exports
 export {
-    ElfFile,
-    EIdentEntries,
-    Elf_Ehdr,
-    ElfBase,
-    Elf32Types,
-    Elf64Types,
     e_ident,
     elf_hdr,
-    ElfBitVersion,
-    ElfEndianness
 }
 
-/*
-Basic elf data types in bytes
-*/
-
-// bit size of architecture (32=32bit, 64=64bit)
-type ElfBitVersion = 32 | 64;
-
-// endianness data format type (undefined=unknown, true=LSB, false=MSB)
-type ElfEndianness = undefined | true | false;
-
-enum Elf32Types {
-    char        = 1,
-    Elf_Half    = 2,
-    Elf_Addr    = 4,
-    Elf_Off     = 4,
-    Elf_Sword   = 4,
-    Elf_Word    = 4
-};
-
-enum Elf64Types {
-    char        = 1,
-    Elf_Half    = 2,
-    Elf_SHalf   = 2,
-    Elf_Sword   = 4,
-    Elf_Word    = 4,
-    Elf_Off     = 8,
-    Elf_Addr    = 8,
-    Elf_Xword   = 8,
-    Elf_Sxword  = 8
-};
-
-interface ElfData {
-    name: String;
-    value: number | String | object;
-    raw_dec: number;
-    raw_hex: number;
-    size: number; // in bytes
-    offset: number; // from file beginning
-};
-
-
-interface ElfFile {
-    elfHeader : Elf_Ehdr;
-};
-
-type EIdentEntries = {
-    EI_MAG0     : ElfData;
-    EI_MAG1     : ElfData;
-    EI_MAG2     : ElfData;
-    EI_MAG3     : ElfData;
-    EI_CLASS    : ElfData;
-    EI_DATA     : ElfData,
-    EI_VERSION  : ElfData,
-    EI_OSABI    : ElfData,
-    EI_ABIVERSION   : ElfData,
-    EI_PAD      : ElfData,
-    EI_NIDENT   : ElfData
-};
-
-interface Elf_Ehdr {
-    e_ident     : EIdentEntries;
-    e_type      : ElfData;
-    e_machine   : ElfData;
-    e_version   : ElfData;
-    e_entry     : ElfData;
-    e_phoff     : ElfData;
-    e_shoff     : ElfData;
-    e_flags     : ElfData;
-    e_ehsize    : ElfData;
-    e_phentsize : ElfData;
-    e_phnum     : ElfData;
-    e_shentsize : ElfData;
-    e_shnum     : ElfData;
-    e_shstrndx  : ElfData;
-};
-
-abstract class ElfBase {
-
-    readonly data: DataView;
-    endianness: ElfEndianness = true; // assuming its LSB first
-    bit : ElfBitVersion = 32; // assuming its 32 bit first
-
-    constructor(data : DataView) {
-        this.data = data;
-    }
-
-}
-
-export class ElfDataReader extends ElfBase{
-    
-    private offset: number = 0;
-
-    constructor(data: DataView, offset: number) {
-        super(data);
-        this.offset = offset;
-    }
-
-    readData(name: String, size: number, encoding?: object) : ElfData {
-
-        let value = 0;
-
-        if (encoding == undefined) {
-            value = this.readBytes(size);
-        } else {
-            value = encoding[this.readBytes(size)];
-        }
-
-        let elfData : ElfData = {
-            name : name,
-            value: value,
-            raw_dec: +value.toString(), // + means casting to int
-            raw_hex: +value.toString(16), // + means casting to int
-            size: size,
-            offset: this.offset
-        }
-
-        this.offset += size;
-
-        return elfData;
-    }
-
-    private readBytes(size: number): number {
-
-        // 32 bit
-        if (this.bit == 32) {
-            switch (size) {
-                case Elf32Types.char      : return this.data.getUint8(this.offset);
-                case Elf32Types.Elf_Half  : return this.data.getUint16(this.offset, this.endianness);
-                case Elf32Types.Elf_Word  : return this.data.getUint32(this.offset, this.endianness);
-                case Elf32Types.Elf_Addr  : return this.data.getUint32(this.offset, this.endianness);
-                case Elf32Types.Elf_Off   : return this.data.getUint32(this.offset, this.endianness);
-                case Elf32Types.Elf_Sword : return this.data.getInt32(this.offset, this.endianness);
-                // Add other cases as needed
-                default: throw new Error(`No 32-bit read method for size ${size}`);
-            }
-    
-        } else {
-            // 64 bit
-            switch (size) {
-                case Elf64Types.char      : return this.data.getUint8(this.offset);
-                case Elf64Types.Elf_Half  : return this.data.getUint16(this.offset, this.endianness);
-                case Elf64Types.Elf_SHalf : return this.data.getInt16(this.offset, this.endianness);
-                case Elf64Types.Elf_Word  : return this.data.getUint32(this.offset, this.endianness);
-                case Elf64Types.Elf_Sword : return this.data.getInt32(this.offset, this.endianness);
-                case Elf64Types.Elf_Addr  : return Number(this.data.getBigUint64(this.offset, this.endianness));
-                case Elf64Types.Elf_Off   : return Number(this.data.getBigUint64(this.offset, this.endianness));
-                case Elf64Types.Elf_Xword : return Number(this.data.getBigUint64(this.offset, this.endianness));
-                case Elf64Types.Elf_Sxword : return Number(this.data.getBigInt64(this.offset, this.endianness));
-                // Add other cases as needed
-                default: throw new Error(`No 64-bit read method for size ${size}`);
-            }
-        }
-    }
-
-}
 
 const e_ident = {
     
@@ -223,10 +60,10 @@ const e_ident = {
         17 : "ELFOSABI_CLOUDABI",       /* Nuxi CloudABI */
         18 : "ELFOSABI_OPENVOS",        /* Stratus Technologies OpenVOS */
         64 : "ELFOSABI_C6000_ELFABI",   /* Bare-metal TMS320C6000 */
-        64 : "ELFOSABI_AMDGPU_HSA",     /* AMD HSA Runtime */
+        // 64 : "ELFOSABI_AMDGPU_HSA",     /* AMD HSA Runtime */
         65 : "ELFOSABI_C6000_LINUX",    /* Linux TMS320C6000 */
-        65 : "ELFOSABI_AMDGPU_PAL",     /* AMD PAL Runtime */
-        65 : "ELFOSABI_ARM_FDPIC",      /* ARM FDPIC */
+        // 65 : "ELFOSABI_AMDGPU_PAL",     /* AMD PAL Runtime */
+        // 65 : "ELFOSABI_ARM_FDPIC",      /* ARM FDPIC */
         66 : "ELFOSABI_AMDGPU_MESA3D",  /* AMD Mesa3D Runtime */
         97 : "ELFOSABI_ARM",             /* ARM */
         255: "ELFOSABI_STANDALONE"      /* Standalone (embedded) application */
@@ -266,14 +103,12 @@ const elf_hdr = {
         9 : "EM_S370",		  	    /* IBM System/370 */
         10 : "EM_MIPS_RS3_LE",	    /* MIPS R3000 little-endian (Oct 4 1999 Draft).  Deprecated.  */
         11 : "EM_OLD_SPARCV9",	    /* Old version of Sparc v9, from before the ABI.  Deprecated.  */
-        11 : "EM_res011",	 	    /* Reserved */
         12 : "EM_res012",	 	    /* Reserved */
         13 : "EM_res013",	 	    /* Reserved */
         14 : "EM_res014",	 	    /* Reserved */
         15 : "EM_PARISC",	 	    /* HPPA */
         16 : "EM_res016",	 	    /* Reserved */
-        17 : "EM_PPC_OLD",	 	    /* Old version of PowerPC.  Deprecated.  */
-        17 : "EM_VPP550",	 	    /* Fujitsu VPP500 */
+        17 : "EM_PPC_OLD / EM_VPP550",	 	    /* Old version of PowerPC.  Deprecated.  / Fujitsu VPP500*/
         18 : "EM_SPARC32PLUS",	    /* Sun's "v8plus" */
         19 : "EM_960",		 	    /* Intel 80960 */
         20 : "EM_PPC",		 	    /* PowerPC */
@@ -295,8 +130,7 @@ const elf_hdr = {
         36 : "EM_V800",		 	    /* NEC V800 series */
         37 : "EM_FR20",		 	    /* Fujitsu FR20 */
         38 : "EM_RH32",		 	    /* TRW RH32 */
-        39 : "EM_MCORE",	 	    /* Motorola M*Core */ /* May also be taken by Fujitsu MMA */
-        39 : "EM_RCE",		 	    /* Old name for MCore */
+        39 : "EM_MCORE / EM_RCE",	 	    /* Motorola M*Core */ /* May also be taken by Fujitsu MMA / Old name for MCore */
         40 : "EM_ARM",		 	    /* ARM */
         41 : "EM_OLD_ALPHA",	 	/* Digital Alpha */
         42 : "EM_SH",		 	    /* Renesas (formerly Hitachi) / SuperH SH */
@@ -352,13 +186,11 @@ const elf_hdr = {
         92 : "EM_OR1K",		 	    /* OpenRISC 1000 32-bit embedded processor */
         93 : "EM_ARC_COMPACT",	    /* ARC International ARCompact processor */
         94 : "EM_XTENSA",	 	    /* Tensilica Xtensa Architecture */
-        95 : "EM_SCORE_OLD",	 	/* Old Sunplus S+core7 backend magic number. Written in the absence of an ABI.  */
-        95 : "EM_VIDEOCORE",	 	/* Alphamosaic VideoCore processor */
+        95 : "EM_SCORE_OLD / EM_VIDEOCORE",	 	/* Old Sunplus S+core7 backend magic number. Written in the absence of an ABI. / Alphamosaic VideoCore processor */
         96 : "EM_TMM_GPP",	 	    /* Thompson Multimedia General Purpose Processor */
         97 : "EM_NS32K",	 	    /* National Semiconductor 32000 series */
         98 : "EM_TPC",		 	    /* Tenor Network TPC processor */
-        99 : "EM_PJ_OLD",	 	    /* Old value for picoJava.  Deprecated.  */
-        99 : "EM_SNP1K",	 	    /* Trebia SNP 1000 processor */
+        99 : "EM_PJ_OLD / EM_SNP1K",	 	    /* Old value for picoJava.  Deprecated.  / Trebia SNP 1000 processor*/
         100 : "EM_ST200",		    /* STMicroelectronics ST200 microcontroller */
         101 : "EM_IP2K",			/* Ubicom IP2022 micro controller */
         102 : "EM_MAX",			    /* MAX Processor */
@@ -374,8 +206,7 @@ const elf_hdr = {
         112 : "EM_DXP",			    /* Icera Semiconductor Inc. Deep Execution Processor */
         113 : "EM_ALTERA_NIOS2",	/* Altera Nios II soft-core processor */
         114 : "EM_CRX",			    /* National Semiconductor CRX */
-        115 : "EM_CR16_OLD",		/* Old, value for National Semiconductor CompactRISC.  Deprecated.  */
-        115 : "EM_XGATE",		    /* Motorola XGATE embedded processor */
+        115 : "EM_CR16_OLD / EM_XGATE",		/* Old, value for National Semiconductor CompactRISC.  Deprecated.  / Motorola XGATE embedded processor */
         116 : "EM_C166",			/* Infineon C16x/XC16x processor */
         117 : "EM_M16C",			/* Renesas M16C series microprocessors */
         118 : "EM_DSPIC30F",		/* Microchip Technology dsPIC30F Digital Signal Controller */
@@ -395,8 +226,7 @@ const elf_hdr = {
         132 : "EM_RS08",			/* Freescale RS08 embedded processor */
         133 : "EM_res133",		    /* Reserved */
         134 : "EM_ECOG2",		    /* Cyan Technology eCOG2 microprocessor */
-        135 : "EM_SCORE",		    /* Sunplus Score */
-        135 : "EM_SCORE7",		    /* Sunplus S+core7 RISC processor */
+        135 : "EM_SCORE / EM_SCORE7", /* Sunplus Score / Sunplus S+core7 RISC processor*/
         136 : "EM_DSP24",		    /* New Japan Radio (NJR) 24-bit DSP Processor */
         137 : "EM_VIDEOCORE3",	    /* Broadcom VideoCore III processor */
         138 : "EM_LATTICEMICO32",   /* RISC processor for Lattice FPGA architecture */
@@ -429,8 +259,7 @@ const elf_hdr = {
         165 : "EM_8051",			/* Intel 8051 and variants */
         166 : "EM_STXP7X",		    /* STMicroelectronics STxP7x family */
         167 : "EM_NDS32",		    /* Andes Technology compact code size embedded RISC processor family */
-        168 : "EM_ECOG1",		    /* Cyan Technology eCOG1X family */
-        168 : "EM_ECOG1X",		    /* Cyan Technology eCOG1X family */
+        168 : "EM_ECOG1 / EM_ECOG1X", /* Cyan Technology eCOG1X family */
         169 : "EM_MAXQ30",		    /* Dallas Semiconductor MAXQ30 Core Micro-controllers */
         170 : "EM_XIMO16",		    /* New Japan Radio (NJR) 16-bit DSP Processor */
         171 : "EM_MANIK",		    /* M2000 Reconfigurable RISC Microprocessor */
@@ -571,10 +400,11 @@ const elf_hdr = {
     e_shstrndx : {
         0 : "SHN_UNDEF",
         0xffff : "SHN_XINDEX",
-        
     },
     
-    
+    /* Extended numbering */
+    "PN_XNUM" : 0xffff,
+
     /*
     A section  header table index is a subscript into this array. Some section header table indices 
     are reserved: the initial entry and the indices between SHN_LORESERVE and SHN_HIRESERVE.  
@@ -693,7 +523,7 @@ const elf_shdr = {
         19 : "SHT_RELR",	  		/* RELR relative relocations */
         
         0x60000000 : "SHT_LOOS",		/* First of OS specific semantics */
-        0x6fffffff : "SHT_HIOS",		/* Last of OS specific semantics */
+        // 0x6fffffff : "SHT_HIOS",		/* Last of OS specific semantics */
         0x6fff4700 : "SHT_GNU_INCREMENTAL_INPUTS",    /* incremental build data */
         0x6ffffff5 : "SHT_GNU_ATTRIBUTES", 	/* Object attributes */
         0x6ffffff6 : "SHT_GNU_HASH",		/* GNU style symbol hash table */
@@ -733,7 +563,7 @@ const elf_shdr = {
         0x80000000 : "SHF_EXCLUDE", /* Link editor is to exclude this section from executable and shared library that it builds when those objects are not to be further relocated.  */
         0x01000000 : "SHF_GNU_MBIND", /* Mbind section.  */
         0x00100000 : "SHF_RELA_LIVEPATCH",	
-        0x00200000 : "SHF_RO_AFTER_INIT"
+        // 0x00200000 : "SHF_RO_AFTER_INIT"
     },
     
     
@@ -752,7 +582,7 @@ const elf_sym  = {
         8 : "STT_RELC",		    /* Complex relocation expression */
         9 : "STT_SRELC",		/* Signed Complex relocation expression */
         10 : "STT_LOOS",		/* OS-specific semantics */
-        10 : "STT_GNU_IFUNC",	/* Symbol is an indirect code object */
+        // 10 : "STT_GNU_IFUNC",	/* Symbol is an indirect code object */
         12 : "STT_HIOS",		/* OS-specific semantics */
         13 : "STT_LOPROC",		/* Processor-specific semantics */
         15 : "STT_HIPROC"		/* Processor-specific semantics */
@@ -764,7 +594,7 @@ const elf_sym  = {
         1 : "STB_GLOBAL",		/* Symbol visible outside obj */
         2 : "STB_WEAK",		    /* Like globals, lower precedence */
         10 : "STB_LOOS",		/* OS-specific semantics */
-        10 : "STB_GNU_UNIQUE",	/* Symbol is unique in namespace */
+        // 10 : "STB_GNU_UNIQUE",	/* Symbol is unique in namespace */
         12 : "STB_HIOS",		/* OS-specific semantics */
         13 : "STB_LOPROC",		/* Processor-specific semantics */
         15 : "STB_HIPROC"		/* Processor-specific semantics */
@@ -844,9 +674,9 @@ const elf_dynamic = {
         0x60000000 : "OLD_DT_LOOS",	
         0x6000000d : "DT_LOOS",	
         0x6ffff000 : "DT_HIOS",	
-        0x6fffffff : "OLD_DT_HIOS",	
-        0x70000000 : "DT_LOPROC",	
-        0x7fffffff : "DT_HIPROC",	
+        // 0x6fffffff : "OLD_DT_HIOS",	
+        // 0x70000000 : "DT_LOPROC",	
+        // 0x7fffffff : "DT_HIPROC",	
         
         /*
         The next 2 dynamic tag ranges, integer value range 
@@ -871,7 +701,7 @@ const elf_dynamic = {
         0x6ffffdfd : "DT_POSFLAG_1",	
         0x6ffffdfe : "DT_SYMINSZ",	
         0x6ffffdff : "DT_SYMINENT",	
-        0x6ffffdff : "DT_VALRNGHI",	
+        // 0x6ffffdff : "DT_VALRNGHI",	
         
         0x6ffffe00 : "DT_ADDRRNGLO",	
         0x6ffffef5 : "DT_GNU_HASH",	
@@ -885,7 +715,7 @@ const elf_dynamic = {
         0x6ffffefd : "DT_PLTPAD",	
         0x6ffffefe : "DT_MOVETAB",	
         0x6ffffeff : "DT_SYMINFO",	
-        0x6ffffeff : "DT_ADDRRNGHI",	
+        // 0x6ffffeff : "DT_ADDRRNGHI",	
         
         0x6ffffff9 : "DT_RELACOUNT",	
         0x6ffffffa : "DT_RELCOUNT",	
@@ -899,7 +729,7 @@ const elf_dynamic = {
         0x6ffffff0 : "DT_VERSYM",	
         
         0x70000000 : "DT_LOPROC",	
-        0x7fffffff : "DT_HIPROC",	
+        // 0x7fffffff : "DT_HIPROC",	
         
         /* These section tags are used on Solaris.  We support them
         everywhere, and hope they do not conflict.  */
@@ -911,13 +741,17 @@ const elf_dynamic = {
 }
 
 // flag values for certain dynamic d_tag values
-const DT_FLAGS = {};
+type DTFlagsType = {
+    [key: number]: string;
+};
+
+const DT_FLAGS : DTFlagsType = {};
 DT_FLAGS[1 << 0] = "DF_ORIGIN";             /* $ORIGIN processing required */
 DT_FLAGS[1 << 1] = "DF_SYMBOLIC";           /* Symbolic symbol resolution required. */
 DT_FLAGS[1 << 2] = "DF_TEXTREL";            /* Text relocations exist. */
 DT_FLAGS[1 << 3] = "DF_BIND_NOW";           /* Non-lazy binding required. */
 
-const DT_FLAGS_1 = {};
+const DT_FLAGS_1 : DTFlagsType = {};
 DT_FLAGS_1[1 << 0] = "DF_1_NOW";            /* Perform complete relocation processing. */
 DT_FLAGS_1[1 << 1] = "DF_1_GLOBAL";         /* Unused */
 DT_FLAGS_1[1 << 2] = "DF_1_GROUP";          /* Indicate object is a member of a group. */
@@ -949,13 +783,13 @@ DT_FLAGS_1[1 << 28] = "DF_1_KMOD";          /* Object is a kernel module. */
 DT_FLAGS_1[1 << 29] = "DF_1_WEAKFILTER";    /* Object supports weak filtering. */
 DT_FLAGS_1[1 << 30] = "DF_1_NOCOMMON";      /* Object does not have common symbols. */
 
-const DT_POSFLAG_1 = {};
+const DT_POSFLAG_1 : DTFlagsType = {};
 DT_POSFLAG_1[1 << 0] = "DF_P1_LAZYLOAD";    /* Identify lazy loaded dependency. */
 DT_POSFLAG_1[1 << 1] = "DF_P1_GROUPPERM";   /* Identify group dependency. */
 
-const DT_FEATURE = {};
+const DT_FEATURE : DTFlagsType= {};
 DT_FEATURE[1 << 0] = "DTF_1_PARINIT";       /* Partial initialization is required. */
 DT_FEATURE[1 << 1] = "DTF_1_CONFEXP";       /* A Configuration file is expected. */
 
-const DT_GNU_FLAGS_1 = {};
+const DT_GNU_FLAGS_1 : DTFlagsType= {};
 DT_GNU_FLAGS_1[1 << 0] = "DF_GNU_1_UNIQUE";

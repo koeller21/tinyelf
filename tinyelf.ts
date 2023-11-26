@@ -1,33 +1,40 @@
-import {ElfFile} from "./lib/constants/common";
+import {ElfFile} from "./lib/ElfBase";
 import {ElfHeader} from "./lib/ElfHeader";
 
 export class TinyELF {
 
-    async readFile(file:File) {
+    readonly file : ArrayBuffer;
 
-        // Check if 'file' is provided and is a valid object
-        if (!file || typeof file !== 'object') {
-            throw new Error('Invalid file provided.');
-        }
+    constructor(file: ArrayBuffer){
+        this.file = file;
 
-        const arrayBuffer = await this.loadFile(file);
-        let elf = this.parseELF(arrayBuffer);
-        return elf;
+        this.parseELF();
     }
+    // async readFile(file:File) {
 
-    private loadFile(file : File) {
-        return new Promise((resolve) => {
-            const reader = new FileReader();
-            reader.readAsArrayBuffer(file);
-            reader.onload = (event) => {
-                resolve(event.target.result);
-            };
-        });
-    }
+    //     // Check if 'file' is provided and is a valid object
+    //     if (!file || typeof file !== 'object') {
+    //         throw new Error('Invalid file provided.');
+    //     }
 
-    private parseELF(arrayBuffer) {
+    //     const arrayBuffer = await this.loadFile(file);
+    //     let elf = this.parseELF(arrayBuffer);
+    //     return elf;
+    // }
 
-        let data = new DataView(arrayBuffer, 0, arrayBuffer.byteLength);
+    // private loadFile(file : File) {
+    //     return new Promise((resolve) => {
+    //         const reader = new FileReader();
+    //         reader.readAsArrayBuffer(file);
+    //         reader.onload = (event: Event) => {
+    //             resolve(event.target.result);
+    //         };
+    //     });
+    // }
+
+    private parseELF() {
+
+        let data = new DataView(this.file, 0, this.file.byteLength);
 
         let elf! : ElfFile;
 
