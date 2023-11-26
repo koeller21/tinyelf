@@ -131,4 +131,4 @@ dist
 
 # own ignors
 .gdb-history
-build/
+build
