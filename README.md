@@ -15,9 +15,9 @@ A tiny but mighty ELF binary parser written in JS/TS.
 
 ---
 
-Might be nice for educational purposes. Can be used in **both** front-end (HTML) and back-end (nodejs).
+Can be used in **both** front-end (HTML) and back-end (nodejs).
 
-Called tinyelf because I've taken inspiration from <a href="https://github.com/tinygrad/tinygrad">tinygrad</a> to try to keep the code base minimal and maintainable. Written in Typescript.
+Called tinyelf because I've taken inspiration from <a href="https://github.com/tinygrad/tinygrad">tinygrad</a> to try to keep the code base minimal and maintainable. Written in Typescript, an educational project.
 
 ---
 

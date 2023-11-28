@@ -2,7 +2,8 @@
 export {
   ElfFile,
   EIdentEntries,
-  Elf_Ehdr,
+  ElfHeaderInterface,
+  ElfData,
   ElfBase,
   Elf32Types,
   Elf64Types,
@@ -26,55 +27,54 @@ type ElfBitVersion = 32 | 64;
 type ElfEndianness = undefined | true | false;
 
 /**
- * Enum for ELF 32-bit data types sizes in bytes.
+ * Map for ELF 32-bit data types sizes in bytes.
  */
-enum Elf32Types {
-  char = 1,
-  Elf_Half = 2,
-  Elf_Addr = 4,
-  Elf_Off = 4,
-  Elf_Sword = 4,
-  Elf_Word = 4,
-}
+const Elf32Types = {
+  char: 1,
+  Elf_Half: 2,
+  Elf_Addr: 4,
+  Elf_Off: 4,
+  Elf_Sword: 4,
+  Elf_Word: 4,
+};
 
 /**
- * Enum for ELF 64-bit data types sizes in bytes.
+ * Map for ELF 64-bit data types sizes in bytes.
  */
-enum Elf64Types {
-  char = 1,
-  Elf_Half = 2,
-  Elf_SHalf = 2,
-  Elf_Sword = 4,
-  Elf_Word = 4,
-  Elf_Off = 8,
-  Elf_Addr = 8,
-  Elf_Xword = 8,
-  Elf_Sxword = 8,
-}
+const Elf64Types = {
+  char: 1,
+  Elf_Half: 2,
+  Elf_SHalf: 2,
+  Elf_Sword: 4,
+  Elf_Word: 4,
+  Elf_Off: 8,
+  Elf_Addr: 8,
+  Elf_Xword: 8,
+  Elf_Sxword: 8,
+};
 
 /**
  * Interface for representing a single ELF data entry.
  */
-interface ElfData {
-  name: String;
-  value: number | String | object;
+type ElfData = {
+  name: string;
+  value: number | string | object;
   raw_dec: number;
-  raw_hex: number;
   size: number; // in bytes
   offset: number; // from file beginning
-}
+};
 
 /**
  * Interface representing an entire ELF file.
  */
 interface ElfFile {
-  elfHeader: Elf_Ehdr;
+  elfHeader: ElfHeaderInterface;
 }
 
 /**
- * Type representing the entries in the ELF Identification header (e_ident).
+ * Interface representing the entries in the ELF Identification header (e_ident).
  */
-type EIdentEntries = {
+interface EIdentEntries {
   EI_MAG0: ElfData;
   EI_MAG1: ElfData;
   EI_MAG2: ElfData;
@@ -86,12 +86,12 @@ type EIdentEntries = {
   EI_ABIVERSION: ElfData;
   EI_PAD: ElfData;
   EI_NIDENT: ElfData;
-};
+}
 
 /**
  * Interface for the ELF header structure.
  */
-interface Elf_Ehdr {
+interface ElfHeaderInterface {
   e_ident: EIdentEntries;
   e_type: ElfData;
   e_machine: ElfData;
@@ -149,20 +149,44 @@ abstract class ElfBase {
  * Extends ElfBase to provide data reading functionality for ELF files.
  * Offers methods to read data from the DataView based on the ELF file format (32-bit or 64-bit).
  */
-class ElfDataReader extends ElfBase {
+class ElfDataReader {
+  /**
+   * The raw data view of the ELF file.
+   */
+  readonly data: DataView;
+
   /**
    * Current offset within the DataView.
    */
   private offset: number;
 
   /**
+   * Bit version of the ELF file (32-bit or 64-bit).
+   */
+  readonly bit: ElfBitVersion = 32; // defaults to 32 bit
+
+  /**
+   * Endianness of the ELF file data.
+   */
+  readonly endianness: ElfEndianness = true; // defaults to LSB (true)
+
+  /**
    * Constructs an ElfDataReader instance.
    *
    * @param data - The DataView instance representing the ELF file data.
+   * @param bit - Bit version of the ELF file (32-bit or 64-bit).
+   * @param endianness - Endianness of the ELF file data.
    * @param offset - The initial offset from where to start reading the data.
    */
-  constructor(data: DataView, offset: number) {
-    super(data);
+  constructor(
+    data: DataView,
+    bit: ElfBitVersion,
+    endianness: ElfEndianness,
+    offset: number,
+  ) {
+    this.data = data;
+    this.bit = bit;
+    this.endianness = endianness;
     this.offset = offset;
   }
 
@@ -174,8 +198,8 @@ class ElfDataReader extends ElfBase {
    * @param encoding - Optional encoding map for translating read values to strings.
    * @returns {ElfData} An object representing the read data, including its raw and formatted values.
    */
-  readData(name: String, size: number, encoding?: Encoding): ElfData {
-    let value: number | String;
+  readData(name: string, size: number, encoding?: Encoding): ElfData {
+    let value: number | string;
 
     // Reads raw value from the DataView based on the size
     const readValue = this.readBytes(size);
@@ -185,8 +209,7 @@ class ElfDataReader extends ElfBase {
     let elfData: ElfData = {
       name: name,
       value: value,
-      raw_dec: +value.toString(), // + means casting to int (dec repr)
-      raw_hex: +value.toString(16), // + means casting to int (hex repr)
+      raw_dec: +readValue.toString(), // + means casting to int (dec repr)
       size: size,
       offset: this.offset,
     };
@@ -221,6 +244,14 @@ class ElfDataReader extends ElfBase {
           return this.data.getUint32(this.offset, this.endianness);
         case Elf32Types.Elf_Sword:
           return this.data.getInt32(this.offset, this.endianness);
+        case 6: // EI_PAD extra sausage
+          return (
+            (this.data.getInt32(this.offset, this.endianness) << 16) |
+            this.data.getInt16(
+              this.offset + Elf32Types.Elf_Off,
+              this.endianness,
+            )
+          );
         default:
           throw new Error(`No 32-bit read method for size ${size}`);
       }

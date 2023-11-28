@@ -7,7 +7,7 @@ export class TinyELF {
   constructor(file: ArrayBuffer) {
     this.file = file;
 
-    this.parseELF();
+    let elf = this.parseELF();
   }
   // async readFile(file:File) {
 
@@ -31,16 +31,12 @@ export class TinyELF {
   //     });
   // }
 
-  private parseELF() {
+  private parseELF(): ElfFile {
     let data = new DataView(this.file, 0, this.file.byteLength);
 
-    let elf!: ElfFile;
-
-    try {
-      elf.elfHeader = new ElfHeader(data).header;
-    } catch (error) {
-      console.log(error);
-    }
+    let elf: ElfFile = {
+      elfHeader: new ElfHeader(data),
+    };
 
     return elf;
 

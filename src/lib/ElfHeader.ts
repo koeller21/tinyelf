@@ -1,7 +1,8 @@
 import { e_ident, elf_hdr } from "./constants/common";
 
 import {
-  Elf_Ehdr,
+  ElfHeaderInterface,
+  ElfData,
   ElfBase,
   ElfDataReader,
   EIdentEntries,
@@ -14,24 +15,57 @@ import {
 // EI_NIDENT is typically defined as 16
 const EI_NIDENT = 16;
 
-export class ElfHeader extends ElfBase {
-  header!: Elf_Ehdr;
+export class ElfHeader extends ElfBase implements ElfHeaderInterface {
+  e_ident: EIdentEntries;
+  e_type: ElfData;
+  e_machine: ElfData;
+  e_version: ElfData;
+  e_entry: ElfData;
+  e_phoff: ElfData;
+  e_shoff: ElfData;
+  e_flags: ElfData;
+  e_ehsize: ElfData;
+  e_phentsize: ElfData;
+  e_phnum: ElfData;
+  e_shentsize: ElfData;
+  e_shnum: ElfData;
+  e_shstrndx: ElfData;
 
   constructor(data: DataView) {
     super(data);
 
-    this.header.e_ident = this.parse_e_ident();
+    this.e_ident = this.parse_e_ident();
+
     this.bit = (
-      this.header.e_ident.EI_CLASS.value == "ELFCLASS32" ? 32 : 64
+      this.e_ident.EI_CLASS.value == "ELFCLASS32" ? 32 : 64
     ) as ElfBitVersion;
-    this.endianness = (this.header.e_ident.EI_DATA.value ==
+
+    this.endianness = (this.e_ident.EI_DATA.value ==
       "ELFDATA2LSB") as ElfEndianness;
 
-    this.parse_ehdr();
+    let e_entries = this.parse_ehdr();
+    this.e_type = e_entries.e_type;
+    this.e_machine = e_entries.e_machine;
+    this.e_version = e_entries.e_version;
+    this.e_entry = e_entries.e_entry;
+    this.e_phoff = e_entries.e_phoff;
+    this.e_shoff = e_entries.e_shoff;
+    this.e_flags = e_entries.e_flags;
+    this.e_ehsize = e_entries.e_ehsize;
+    this.e_phentsize = e_entries.e_phentsize;
+    this.e_phnum = e_entries.e_phnum;
+    this.e_shentsize = e_entries.e_shentsize;
+    this.e_shnum = e_entries.e_shnum;
+    this.e_shstrndx = e_entries.e_shstrndx;
   }
 
   private parse_e_ident(): EIdentEntries {
-    const dataReader = new ElfDataReader(this.data, 0);
+    const dataReader = new ElfDataReader(
+      this.data,
+      this.bit,
+      this.endianness,
+      0,
+    );
 
     /*
         The first byte of the magic number.  It must be filled with ELFMAG0.  (0: 0x7f)
@@ -142,7 +176,7 @@ export class ElfHeader extends ElfBase {
         The value for EI_PAD will change in the future if currently unused bytes
         are given meanings.
         */
-    const EI_PAD = dataReader.readData("EI_PAD", 6);
+    const EI_PAD = dataReader.readData("EI_PAD", Elf32Types.Elf_Half);
 
     /*
         The size of the e_ident array.
@@ -168,7 +202,12 @@ export class ElfHeader extends ElfBase {
 
   private parse_ehdr() {
     let dtype = 0;
-    const dataReader = new ElfDataReader(this.data, EI_NIDENT);
+    const dataReader = new ElfDataReader(
+      this.data,
+      this.bit,
+      this.endianness,
+      EI_NIDENT,
+    );
 
     /* This member of the structure identifies the object file type */
     dtype = this.bit == 32 ? Elf32Types.Elf_Half : Elf64Types.Elf_Half;
@@ -246,10 +285,10 @@ export class ElfHeader extends ElfBase {
         entries in the program header table is held in the sh_info member of the initial
         entry in section header table.
         */
-    if (e_phnum.raw_hex >= elf_hdr["PN_XNUM"]) {
+
+    if (e_phnum.raw_dec >= elf_hdr["PN_XNUM"]) {
       e_phnum.value = 65535; //PN_XNUM
       e_phnum.raw_dec = 65535; //PN_XNUM
-      e_phnum.raw_hex = 0xffff; //PN_XNUM
     }
 
     /*
@@ -274,10 +313,9 @@ export class ElfHeader extends ElfBase {
         in the section header table is held in the sh_size member of the initial
         entry in section header table.
         */
-    if (e_shnum.raw_hex >= elf_hdr["SHN_LORESERVE"]) {
+    if (e_shnum.raw_dec >= elf_hdr["SHN_LORESERVE"]) {
       e_shnum.value = 0;
       e_shnum.raw_dec = 0x0;
-      e_shnum.raw_hex = 0x0;
     }
 
     /*
@@ -296,25 +334,29 @@ export class ElfHeader extends ElfBase {
         of the section name string table section is held in the sh_link member of
         the initial entry in section header table.
         */
-    if (e_shstrndx.raw_hex == elf_hdr["SHN_UNDEF"]) {
+    if (e_shstrndx.raw_dec == elf_hdr["SHN_UNDEF"]) {
       e_shstrndx.value = elf_hdr.e_shstrndx[0]; //SHN_UNDEF
-    } else if (e_shstrndx.raw_hex >= elf_hdr["SHN_LORESERVE"]) {
+    } else if (e_shstrndx.raw_dec >= elf_hdr["SHN_LORESERVE"]) {
       e_shstrndx.value = elf_hdr.e_shstrndx[0xffff]; // SHN_XINDEX
     }
 
-    // set other members of Elf_Ehdr
-    this.header.e_type = e_type;
-    this.header.e_machine = e_machine;
-    this.header.e_version = e_version;
-    this.header.e_entry = e_entry;
-    this.header.e_phoff = e_phoff;
-    this.header.e_shoff = e_shoff;
-    this.header.e_flags = e_flags;
-    this.header.e_ehsize = e_ehsize;
-    this.header.e_phentsize = e_phentsize;
-    this.header.e_phnum = e_phnum;
-    this.header.e_shentsize = e_shentsize;
-    this.header.e_shnum = e_shnum;
-    this.header.e_shstrndx = e_shstrndx;
+    // set members of ElfHeaderInterface
+    let e_entries = {
+      e_type: e_type,
+      e_machine: e_machine,
+      e_version: e_version,
+      e_entry: e_entry,
+      e_phoff: e_phoff,
+      e_shoff: e_shoff,
+      e_flags: e_flags,
+      e_ehsize: e_ehsize,
+      e_phentsize: e_phentsize,
+      e_phnum: e_phnum,
+      e_shentsize: e_shentsize,
+      e_shnum: e_shnum,
+      e_shstrndx: e_shstrndx,
+    };
+
+    return e_entries;
   }
 }
