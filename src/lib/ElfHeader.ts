@@ -1,40 +1,29 @@
 import { e_ident, elf_hdr } from "./constants/common";
 
+import { ElfDataReader } from "./ElfReader";
+
 import {
   ElfHeaderInterface,
-  ElfData,
+  ElfHeaderRestInterface,
   ElfBase,
-  ElfDataReader,
-  EIdentEntries,
+  EIdentEntry,
   Elf32Types,
   Elf64Types,
   ElfBitVersion,
   ElfEndianness,
 } from "./ElfBase";
 
-// EI_NIDENT is typically defined as 16
-const EI_NIDENT = 16;
+// EI_NIDENT_CONST is typically defined as 16
+const EI_NIDENT_CONST: number = 16;
 
 export class ElfHeader extends ElfBase implements ElfHeaderInterface {
-  e_ident: EIdentEntries;
-  e_type: ElfData;
-  e_machine: ElfData;
-  e_version: ElfData;
-  e_entry: ElfData;
-  e_phoff: ElfData;
-  e_shoff: ElfData;
-  e_flags: ElfData;
-  e_ehsize: ElfData;
-  e_phentsize: ElfData;
-  e_phnum: ElfData;
-  e_shentsize: ElfData;
-  e_shnum: ElfData;
-  e_shstrndx: ElfData;
+  e_ident: EIdentEntry;
+  e_entries: ElfHeaderRestInterface;
 
-  constructor(data: DataView) {
-    super(data);
+  constructor(buffer: ArrayBuffer) {
+    super();
 
-    this.e_ident = this.parse_e_ident();
+    this.e_ident = this.parse_e_ident(buffer);
 
     this.bit = (
       this.e_ident.EI_CLASS.value == "ELFCLASS32" ? 32 : 64
@@ -43,25 +32,16 @@ export class ElfHeader extends ElfBase implements ElfHeaderInterface {
     this.endianness = (this.e_ident.EI_DATA.value ==
       "ELFDATA2LSB") as ElfEndianness;
 
-    let e_entries = this.parse_ehdr();
-    this.e_type = e_entries.e_type;
-    this.e_machine = e_entries.e_machine;
-    this.e_version = e_entries.e_version;
-    this.e_entry = e_entries.e_entry;
-    this.e_phoff = e_entries.e_phoff;
-    this.e_shoff = e_entries.e_shoff;
-    this.e_flags = e_entries.e_flags;
-    this.e_ehsize = e_entries.e_ehsize;
-    this.e_phentsize = e_entries.e_phentsize;
-    this.e_phnum = e_entries.e_phnum;
-    this.e_shentsize = e_entries.e_shentsize;
-    this.e_shnum = e_entries.e_shnum;
-    this.e_shstrndx = e_entries.e_shstrndx;
+    let [e_entries, last_offset] = this.parse_ehdr(buffer);
+    this.e_entries = e_entries;
+
+    // set data
+    this.data = new DataView(buffer, 0, last_offset);
   }
 
-  private parse_e_ident(): EIdentEntries {
+  private parse_e_ident(buffer: ArrayBuffer): EIdentEntry {
     const dataReader = new ElfDataReader(
-      this.data,
+      new DataView(buffer, 0, EI_NIDENT_CONST - 1),
       this.bit,
       this.endianness,
       0,
@@ -76,23 +56,26 @@ export class ElfHeader extends ElfBase implements ElfHeaderInterface {
         The second byte of the magic number.  It must be filled with ELFMAG1.  (1: 'E')
         */
     const EI_MAG1 = dataReader.readData("EI_MAG1", Elf32Types.char);
+    EI_MAG1.value = String.fromCharCode(EI_MAG1.raw_dec);
 
     /*
         The third byte of the magic number.  It must be filled with ELFMAG2.  (2: 'L')
         */
     const EI_MAG2 = dataReader.readData("EI_MAG2", Elf32Types.char);
+    EI_MAG2.value = String.fromCharCode(EI_MAG2.raw_dec);
 
     /*
         The fourth byte of the magic number.  It must be filled with ELFMAG3.  (3: 'F')
         */
     const EI_MAG3 = dataReader.readData("EI_MAG3", Elf32Types.char);
+    EI_MAG3.value = String.fromCharCode(EI_MAG3.raw_dec);
 
     // check if magic numbers are correct, if not, abort
     if (
-      EI_MAG0.value != 127 ||
-      EI_MAG1.value != 69 ||
-      EI_MAG2.value != 76 ||
-      EI_MAG3.value != 70
+      EI_MAG0.raw_dec != 127 ||
+      EI_MAG1.raw_dec != 69 ||
+      EI_MAG2.raw_dec != 76 ||
+      EI_MAG3.raw_dec != 70
     ) {
       const err = new Error(
         "This does not appear to be an ELF-Binary - Magic numbers are wrong",
@@ -183,7 +166,7 @@ export class ElfHeader extends ElfBase implements ElfHeaderInterface {
         */
     const EI_NIDENT = dataReader.readData("EI_NIDENT", 1);
 
-    let e_ident_entries: EIdentEntries = {
+    let e_ident_entries: EIdentEntry = {
       EI_MAG0: EI_MAG0,
       EI_MAG1: EI_MAG1,
       EI_MAG2: EI_MAG2,
@@ -200,13 +183,13 @@ export class ElfHeader extends ElfBase implements ElfHeaderInterface {
     return e_ident_entries;
   }
 
-  private parse_ehdr() {
+  private parse_ehdr(buffer: ArrayBuffer): [ElfHeaderRestInterface, number] {
     let dtype = 0;
     const dataReader = new ElfDataReader(
-      this.data,
+      new DataView(buffer, 0, buffer.byteLength),
       this.bit,
       this.endianness,
-      EI_NIDENT,
+      EI_NIDENT_CONST,
     );
 
     /* This member of the structure identifies the object file type */
@@ -340,8 +323,8 @@ export class ElfHeader extends ElfBase implements ElfHeaderInterface {
       e_shstrndx.value = elf_hdr.e_shstrndx[0xffff]; // SHN_XINDEX
     }
 
-    // set members of ElfHeaderInterface
-    let e_entries = {
+    // set members
+    let e_entries: ElfHeaderRestInterface = {
       e_type: e_type,
       e_machine: e_machine,
       e_version: e_version,
@@ -357,6 +340,6 @@ export class ElfHeader extends ElfBase implements ElfHeaderInterface {
       e_shstrndx: e_shstrndx,
     };
 
-    return e_entries;
+    return [e_entries, dataReader.offset];
   }
 }

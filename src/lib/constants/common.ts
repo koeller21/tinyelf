@@ -11,10 +11,7 @@ https://docs.oracle.com/cd/E19683-01/816-1386/index.html
 
 */
 
-// Exports
-export { e_ident, elf_hdr };
-
-const e_ident = {
+export const e_ident = {
   /* File class */
   EI_CLASS: {
     0: "ELFCLASSNONE" /* Invalid class */,
@@ -64,7 +61,7 @@ const e_ident = {
   },
 };
 
-const elf_hdr = {
+export const elf_hdr = {
   /* Values for e_type, which identifies the object file type.  */
   e_type: {
     0: "ET_NONE" /* No file type */,
@@ -459,7 +456,7 @@ const elf_hdr = {
 };
 
 /* These constants are for the segment types stored in the image headers */
-const elf_phdr = {
+export const elf_phdr = {
   /* Values for program header, p_type field.  */
   p_type: {
     0: "PT_NULL" /* Program header table entry unused */,
@@ -501,7 +498,7 @@ const elf_phdr = {
   },
 };
 
-const elf_shdr = {
+export const elf_shdr = {
   /* Values for section header, sh_type field.  */
   sh_type: {
     0: "SHT_NULL" /* Section header table entry unused */,
@@ -571,7 +568,7 @@ const elf_shdr = {
   },
 };
 
-const elf_sym = {
+export const elf_sym = {
   /* Values for symbol type */
   st_type: {
     0: "STT_NOTYPE" /* Symbol type is unspecified */,
@@ -610,7 +607,7 @@ const elf_sym = {
   },
 };
 
-const elf_dynamic = {
+export const elf_dynamic = {
   /*
     The d_tag member controls the interpretation of d_un, which is a
     union of d_val, representing integer values with
@@ -745,7 +742,7 @@ type DTFlagsType = {
   [key: number]: string;
 };
 
-const DT_FLAGS: DTFlagsType = {};
+export const DT_FLAGS: DTFlagsType = {};
 DT_FLAGS[1 << 0] = "DF_ORIGIN"; /* $ORIGIN processing required */
 DT_FLAGS[1 << 1] = "DF_SYMBOLIC"; /* Symbolic symbol resolution required. */
 DT_FLAGS[1 << 2] = "DF_TEXTREL"; /* Text relocations exist. */
@@ -794,13 +791,13 @@ DT_FLAGS_1[1 << 29] = "DF_1_WEAKFILTER"; /* Object supports weak filtering. */
 DT_FLAGS_1[1 << 30] =
   "DF_1_NOCOMMON"; /* Object does not have common symbols. */
 
-const DT_POSFLAG_1: DTFlagsType = {};
+export const DT_POSFLAG_1: DTFlagsType = {};
 DT_POSFLAG_1[1 << 0] = "DF_P1_LAZYLOAD"; /* Identify lazy loaded dependency. */
 DT_POSFLAG_1[1 << 1] = "DF_P1_GROUPPERM"; /* Identify group dependency. */
 
-const DT_FEATURE: DTFlagsType = {};
+export const DT_FEATURE: DTFlagsType = {};
 DT_FEATURE[1 << 0] = "DTF_1_PARINIT"; /* Partial initialization is required. */
 DT_FEATURE[1 << 1] = "DTF_1_CONFEXP"; /* A Configuration file is expected. */
 
-const DT_GNU_FLAGS_1: DTFlagsType = {};
+export const DT_GNU_FLAGS_1: DTFlagsType = {};
 DT_GNU_FLAGS_1[1 << 0] = "DF_GNU_1_UNIQUE";

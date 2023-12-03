@@ -1,13 +1,24 @@
-import { ElfFile } from "./lib/ElfBase";
-import { ElfHeader } from "./lib/ElfHeader";
+import {
+  ElfFile,
+  ElfHeaderInterface,
+  ElfProgramHeaderInterface,
+} from "./lib/ElfBase";
 
-export class TinyELF {
+import { ElfHeader } from "./lib/ElfHeader";
+import { ElfProgramHeader } from "./lib/ElfProgramHeader";
+
+export class TinyELF implements ElfFile {
+  readonly elfHeader: ElfHeaderInterface;
+  readonly elfProgramHeader: ElfProgramHeaderInterface;
+
   readonly file: ArrayBuffer;
 
   constructor(file: ArrayBuffer) {
     this.file = file;
 
-    let elf = this.parseELF();
+    let elfFile = this.parseELF();
+    this.elfHeader = elfFile.elfHeader;
+    this.elfProgramHeader = elfFile.elfProgramHeader;
   }
   // async readFile(file:File) {
 
@@ -32,13 +43,24 @@ export class TinyELF {
   // }
 
   private parseELF(): ElfFile {
-    let data = new DataView(this.file, 0, this.file.byteLength);
+    // let data = new DataView(this.file, 0, this.file.byteLength);
 
-    let elf: ElfFile = {
-      elfHeader: new ElfHeader(data),
+    let elfHeader = new ElfHeader(this.file);
+    let elfProgramHeader = new ElfProgramHeader(
+      this.file,
+      elfHeader.endianness,
+      elfHeader.bit,
+      elfHeader.e_entries.e_phnum,
+      elfHeader.e_entries.e_phoff,
+      elfHeader.e_entries.e_phentsize,
+    );
+
+    let elfFile: ElfFile = {
+      elfHeader: elfHeader,
+      elfProgramHeader: elfProgramHeader,
     };
 
-    return elf;
+    return elfFile;
 
     // try {
     //     this.e_ident = this.#processEIdent();
@@ -69,439 +91,6 @@ export class TinyELF {
     // [this.elf_contents.elf_version_requirements, this.elf_contents.elf_version_requirements_auxillary] = this.#processElfVersionRequirements();
     // [this.elf_contents.elf_version_definitions, this.elf_contents.elf_version_definitions_auxillary] = this.#processElfVersionDefinitions();
   }
-
-  // #processEIdent() {
-
-  //     let eident_offset = 0;
-
-  //     /*
-  //     The first byte of the magic number.  It must be filled with ELFMAG0.  (0: 0x7f)
-  //     */
-  //     const EI_MAG0 = {
-  //         value: this.elfFile.getUint8(eident_offset),
-  //         raw_dec: this.elfFile.getUint8(eident_offset).toString(),
-  //         raw_hex: this.elfFile.getUint8(eident_offset).toString(16),
-  //         size_bytes: 1,
-  //         offset: eident_offset,
-  //         name: "EI_MAG0"
-  //     };
-  //     // move forward one byte in the e_ident array
-  //     eident_offset += 1;
-
-  //     /*
-  //     The second byte of the magic number.  It must be filled with ELFMAG1.  (1: 'E')
-  //     */
-  //     const EI_MAG1 = {
-  //         value: this.elfFile.getUint8(eident_offset),
-  //         raw_dec: this.elfFile.getUint8(eident_offset).toString(),
-  //         raw_hex: this.elfFile.getUint8(eident_offset).toString(16),
-  //         size_bytes: 1,
-  //         offset: eident_offset,
-  //         name: "EI_MAG1"
-  //     };
-  //     eident_offset += 1;
-
-  //     /*
-  //     The third byte of the magic number.  It must be filled with ELFMAG2.  (2: 'L')
-  //     */
-  //     const EI_MAG2 = {
-  //         value: this.elfFile.getUint8(eident_offset),
-  //         raw_dec: this.elfFile.getUint8(eident_offset).toString(),
-  //         raw_hex: this.elfFile.getUint8(eident_offset).toString(16),
-  //         size_bytes: 1,
-  //         offset: eident_offset,
-  //         name: "EI_MAG2"
-  //     };
-  //     eident_offset += 1;
-
-  //     /*
-  //     The fourth byte of the magic number.  It must be filled with ELFMAG3.  (3: 'F')
-  //     */
-  //     const EI_MAG3 = {
-  //         value: this.elfFile.getUint8(eident_offset),
-  //         raw_dec: this.elfFile.getUint8(eident_offset).toString(),
-  //         raw_hex: this.elfFile.getUint8(eident_offset).toString(16),
-  //         size_bytes: 1,
-  //         offset: eident_offset,
-  //         name: "EI_MAG3"
-  //     };
-  //     eident_offset += 1;
-
-  //     // check if magic numbers are correct, if not, abort
-  //     if (EI_MAG0.value != 127 || EI_MAG1.value != 69 || EI_MAG2.value != 76 || EI_MAG3.value != 70) {
-  //         const err = new Error("This does not appear to be an ELF-Binary - Magic numbers are wrong");
-  //         throw err;
-  //     }
-
-  //     /*
-  //     ToDo:
-  //     readelf.c:check_magic_number checks for other file types (e.g. llvm and go)
-  //     and suggest other tools - maybe do the same here!
-  //     */
-  //     /*
-  //     The fifth byte identifies the architecture for this binary:
-  //     */
-  //     const EI_CLASS = {
-  //         value: e_ident.EI_CLASS[this.elfFile.getUint8(eident_offset)],
-  //         raw_dec: this.elfFile.getUint8(eident_offset).toString(),
-  //         raw_hex: this.elfFile.getUint8(eident_offset).toString(16),
-  //         size_bytes: 1,
-  //         offset: eident_offset,
-  //         name: "EI_CLASS"
-  //     };
-  //     eident_offset += 1;
-
-  //     // check if class is invalid, if yes, abort
-  //     if (EI_CLASS.value == "ELFCLASSNONE" || EI_CLASS.value == null) {
-  //         const err = new Error("None or invalid ELF-File Class: " + EI_CLASS.value);
-  //         throw err;
-  //     }
-
-  //     /*
-  //     The sixth byte specifies the data encoding of the processor-specific data in the file.
-  //     */
-  //     const EI_DATA = {
-  //         value: e_ident.EI_DATA[this.elfFile.getUint8(eident_offset)],
-  //         raw_dec: this.elfFile.getUint8(eident_offset).toString(),
-  //         raw_hex: this.elfFile.getUint8(eident_offset).toString(16),
-  //         size_bytes: 1,
-  //         offset: eident_offset,
-  //         name: "EI_DATA"
-  //     };
-  //     eident_offset += 1;
-
-  //     // check if data encoding is invalid, if yes, abort
-  //     if (EI_DATA.value == "ELFDATANONE" || EI_DATA.value == null) {
-  //         const err = new Error("None or invalid ELF-File Data Encoding: " + EI_DATA.value);
-  //         throw err;
-  //     }
-
-  //     /*
-  //     The seventh byte is the version number of the ELF specification:
-  //     */
-  //     const EI_VERSION = {
-  //         value: e_ident.EI_VERSION[this.elfFile.getUint8(eident_offset)],
-  //         raw_dec: this.elfFile.getUint8(eident_offset).toString(),
-  //         raw_hex: this.elfFile.getUint8(eident_offset).toString(16),
-  //         size_bytes: 1,
-  //         offset: eident_offset,
-  //         name: "EI_VERSION"
-  //     };
-  //     eident_offset += 1;
-
-  //     /*
-  //     The  eighth byte identifies the operating system and ABI to which the
-  //     object is targeted. Some fields in other ELF structures have flags
-  //     and values that have platform-specific meanings; the interpretation
-  //     of those fields is determined by the value of this byte.
-  //     */
-  //     const EI_OSABI = {
-  //         value: e_ident.EI_OSABI[this.elfFile.getUint8(eident_offset)],
-  //         raw_dec: this.elfFile.getUint8(eident_offset).toString(),
-  //         raw_hex: this.elfFile.getUint8(eident_offset).toString(16),
-  //         size_bytes: 1,
-  //         offset: eident_offset,
-  //         name: "EI_OSABI"
-  //     };
-  //     eident_offset += 1;
-
-  //     /*
-  //     The ninth byte identifies the version of the ABI to which the
-  //     object is targeted. This field is used to distinguish among
-  //     incompatible versions of an  ABI. The  interpretation  of
-  //     this version number is dependent on the ABI identified by the
-  //     EI_OSABI field. Applications conforming to this specification use the value 0
-  //     */
-  //     const EI_ABIVERSION = {
-  //         value: this.elfFile.getUint8(eident_offset),
-  //         raw_dec: this.elfFile.getUint8(eident_offset).toString(),
-  //         raw_hex: this.elfFile.getUint8(eident_offset).toString(16),
-  //         size_bytes: 1,
-  //         offset: eident_offset,
-  //         name: "EI_ABIVERSION"
-  //     };
-  //     eident_offset += 1;
-
-  //     /*
-  //     Start of padding. These bytes are reserved and set to zero.
-  //     Programs which read them should ignore them.
-  //     The value for EI_PAD will change in the future if currently unused bytes
-  //     are given meanings.
-  //     */
-  //     const EI_PAD = {
-  //         value: this.elfFile.getUint8(eident_offset),
-  //         raw_dec: this.elfFile.getUint8(eident_offset).toString(),
-  //         raw_hex: this.elfFile.getUint8(eident_offset).toString(16),
-  //         size_bytes: 6,
-  //         offset: eident_offset,
-  //         name: "EI_PAD"
-  //     };
-  //     eident_offset = 15;
-
-  //     /*
-  //     The size of the e_ident array.
-  //     */
-  //     const EI_NIDENT = {
-  //         value: this.elfFile.getUint8(eident_offset),
-  //         raw_dec: this.elfFile.getUint8(eident_offset).toString(),
-  //         raw_hex: this.elfFile.getUint8(eident_offset).toString(16),
-  //         size_bytes: 1,
-  //         offset: eident_offset,
-  //         name: "EI_NIDENT"
-  //     };
-
-  //     return {
-  //         EI_MAG0: EI_MAG0,
-  //         EI_MAG1: EI_MAG1,
-  //         EI_MAG2: EI_MAG2,
-  //         EI_MAG3: EI_MAG3,
-  //         EI_CLASS: EI_CLASS,
-  //         EI_DATA: EI_DATA,
-  //         EI_VERSION: EI_VERSION,
-  //         EI_OSABI: EI_OSABI,
-  //         EI_ABIVERSION: EI_ABIVERSION,
-  //         EI_PAD: EI_PAD,
-  //         EI_NIDENT: EI_NIDENT
-  //     };
-  // }
-
-  // #processElfHdr32() {
-  // }
-
-  // #processElfHdr64() {
-
-  //     let hdr_offset = 16;
-
-  //     /* This member of the structure identifies the object file type */
-  //     const e_type = {
-  //         value: elf_hdr.e_type[this.elfFile.getUint16(hdr_offset, this.is_lsb)],
-  //         raw_dec: this.elfFile.getUint16(hdr_offset, this.is_lsb).toString(),
-  //         raw_hex: this.elfFile.getUint16(hdr_offset, this.is_lsb).toString(16),
-  //         size_bytes: this.data_types.Elf_Half,
-  //         offset: hdr_offset,
-  //         name: "e_type"
-  //     };
-  //     hdr_offset += this.data_types.Elf_Half;
-
-  //     /* This member of the structure identifies the object file type */
-  //     const e_machine = {
-  //         value: elf_hdr.e_machine[this.elfFile.getUint16(hdr_offset, this.is_lsb)],
-  //         raw_dec: this.elfFile.getUint16(hdr_offset, this.is_lsb).toString(),
-  //         raw_hex: this.elfFile.getUint16(hdr_offset, this.is_lsb).toString(16),
-  //         size_bytes: this.data_types.Elf_Half,
-  //         offset: hdr_offset,
-  //         name: "e_machine"
-  //     };
-  //     hdr_offset += this.data_types.Elf_Half;
-
-  //     /* This member of the structure identifies the object file type */
-  //     const e_version = {
-  //         value: elf_hdr.e_version[this.elfFile.getUint16(hdr_offset, this.is_lsb)],
-  //         raw_dec: this.elfFile.getUint16(hdr_offset, this.is_lsb).toString(),
-  //         raw_hex: this.elfFile.getUint16(hdr_offset, this.is_lsb).toString(16),
-  //         size_bytes: this.data_types.Elf_Word,
-  //         offset: hdr_offset,
-  //         name: "e_version"
-  //     };
-  //     hdr_offset += this.data_types.Elf_Word;
-
-  //     /*
-  //     This member gives the virtual address to which the system first
-  //     transfers control, thus starting the process.
-  //     If the file has no associated entry point, this member holds zero.
-  //     */
-  //     const e_entry = {
-  //         value: Number(this.elfFile.getBigUint64(hdr_offset, this.is_lsb)),
-  //         raw_dec: Number(this.elfFile.getBigUint64(hdr_offset, this.is_lsb)).toString(),
-  //         raw_hex: Number(this.elfFile.getBigUint64(hdr_offset, this.is_lsb)).toString(16),
-  //         size_bytes: this.data_types.Elf_Addr,
-  //         offset: hdr_offset,
-  //         name: "e_entry",
-  //     };
-  //     hdr_offset += this.data_types.Elf_Addr;
-
-  //     /*
-  //     This member holds the program header table's file offset in bytes.
-  //     If the file has no program header table, this member holds zero.
-  //     */
-  //     const e_phoff = {
-  //         value: Number(this.elfFile.getBigUint64(hdr_offset, this.is_lsb)),
-  //         raw_dec: Number(this.elfFile.getBigUint64(hdr_offset, this.is_lsb)).toString(),
-  //         raw_hex: Number(this.elfFile.getBigUint64(hdr_offset, this.is_lsb)).toString(16),
-  //         size_bytes: this.data_types.Elf_Off,
-  //         offset: hdr_offset,
-  //         name: "e_phoff",
-  //     };
-  //     hdr_offset += this.data_types.Elf_Off;
-
-  //     /*
-  //     This member holds the section header table's file offset in bytes.
-  //     If the file has no section header table, this member holds zero.
-  //     */
-  //     const e_shoff = {
-  //         value: Number(this.elfFile.getBigUint64(hdr_offset, this.is_lsb)),
-  //         raw_dec: Number(this.elfFile.getBigUint64(hdr_offset, this.is_lsb)).toString(),
-  //         raw_hex: Number(this.elfFile.getBigUint64(hdr_offset, this.is_lsb)).toString(16),
-  //         size_bytes: this.data_types.Elf_Off,
-  //         offset: hdr_offset,
-  //         name: "e_shoff",
-  //     };
-  //     hdr_offset += this.data_types.Elf_Off;
-
-  //     /*
-  //     This member holds processor-specific flags associated with the file.
-  //     Flag names take the form EF_`machine_flag'.  Currently, no flags have been defined.
-  //     */
-  //     const e_flags = {
-  //         value: this.elfFile.getUint32(hdr_offset, this.is_lsb),
-  //         raw_dec: this.elfFile.getUint32(hdr_offset, this.is_lsb).toString(),
-  //         raw_hex: this.elfFile.getUint32(hdr_offset, this.is_lsb).toString(16),
-  //         size_bytes: this.data_types.Elf_Word,
-  //         offset: hdr_offset,
-  //         name: "e_flags"
-  //     };
-  //     hdr_offset += this.data_types.Elf_Word;
-
-  //     /*
-  //     This member holds the ELF header's size in bytes.
-  //     */
-  //     const e_ehsize = {
-  //         value: this.elfFile.getUint16(hdr_offset, this.is_lsb),
-  //         raw_dec: this.elfFile.getUint16(hdr_offset, this.is_lsb).toString(),
-  //         raw_hex: this.elfFile.getUint16(hdr_offset, this.is_lsb).toString(16),
-  //         size_bytes: this.data_types.Elf_Half,
-  //         offset: hdr_offset,
-  //         name: "e_ehsize"
-  //     };
-  //     hdr_offset += this.data_types.Elf_Half;
-
-  //     /*
-  //     This member holds the size in bytes of one entry in the file's program header table;
-  //     all entries are the same size.
-  //     */
-  //     const e_phentsize = {
-  //         value: this.elfFile.getUint16(hdr_offset, this.is_lsb),
-  //         raw_dec: this.elfFile.getUint16(hdr_offset, this.is_lsb).toString(),
-  //         raw_hex: this.elfFile.getUint16(hdr_offset, this.is_lsb).toString(16),
-  //         size_bytes: this.data_types.Elf_Half,
-  //         offset: hdr_offset,
-  //         name: "e_phentsize"
-  //     };
-  //     hdr_offset += this.data_types.Elf_Half;
-
-  //     /*
-  //     This member holds the number of entries in the program header table.
-  //     Thus the product of e_phentsize and e_phnum gives the table's size in bytes.
-  //     If a file has no program header,  e_phnum holds the value zero.
-  //     */
-  //     let e_phnum = {
-  //         value: this.elfFile.getUint16(hdr_offset, this.is_lsb),
-  //         raw_dec: this.elfFile.getUint16(hdr_offset, this.is_lsb).toString(),
-  //         raw_hex: this.elfFile.getUint16(hdr_offset, this.is_lsb).toString(16),
-  //         size_bytes: this.data_types.Elf_Half,
-  //         offset: hdr_offset,
-  //         name: "e_phnum"
-  //     };
-  //     hdr_offset += this.data_types.Elf_Half;
-
-  //     /*
-  //     If the number of entries in the program header table is larger than or equal to
-  //     PN_XNUM (0xffff), this member holds PN_XNUM (0xffff) and the real number of
-  //     entries in the program header table is held in the sh_info member of the initial
-  //     entry in section header table.
-  //     */
-  //     if (e_phnum >= elf_hdr["PN_XNUM"]) {
-  //         e_phnum = elf_hdr.e_phnum[0xffff]; //PN_XNUM
-  //     }
-
-  //     /*
-  //     This member holds a sections header's size in bytes.
-  //     A section header is one entry in the section header table;
-  //     all entries are the same size.
-  //     */
-  //     const e_shentsize = {
-  //         value: this.elfFile.getUint16(hdr_offset, this.is_lsb),
-  //         raw_dec: this.elfFile.getUint16(hdr_offset, this.is_lsb).toString(),
-  //         raw_hex: this.elfFile.getUint16(hdr_offset, this.is_lsb).toString(16),
-  //         size_bytes: this.data_types.Elf_Half,
-  //         offset: hdr_offset,
-  //         name: "e_shentsize"
-  //     };
-  //     hdr_offset += this.data_types.Elf_Half;
-
-  //     /*
-  //     This member holds the number of entries in the section header table.
-  //     Thus the product of e_shentsize and e_shnum gives the section header table's size in bytes.
-  //     If a file has  no  section header table, e_shnum holds the value of zero.
-  //     */
-  //     let e_shnum = {
-  //         value: this.elfFile.getUint16(hdr_offset, this.is_lsb),
-  //         raw_dec: this.elfFile.getUint16(hdr_offset, this.is_lsb).toString(),
-  //         raw_hex: this.elfFile.getUint16(hdr_offset, this.is_lsb).toString(16),
-  //         size_bytes: this.data_types.Elf_Half,
-  //         offset: hdr_offset,
-  //         name: "e_shnum"
-  //     };
-  //     hdr_offset += this.data_types.Elf_Half;
-
-  //     /*
-  //     If the number of entries in the section header table is larger than or equal to
-  //     SHN_LORESERVE (0xff00), e_shnum holds the value zero and the real number of entries
-  //     in the section header table is held in the sh_size member of the initial
-  //     entry in section header table.
-  //     */
-  //     if (e_shnum >= elf_hdr["SHN_LORESERVE"]) {
-  //         e_shnum = 0;
-  //     }
-
-  //     /*
-  //     This member holds the section header table index of the entry
-  //     associated with the section name string table.
-  //     */
-  //     let e_shstrndx = {
-  //         value: this.elfFile.getUint16(hdr_offset, this.is_lsb),
-  //         raw_dec: this.elfFile.getUint16(hdr_offset, this.is_lsb).toString(),
-  //         raw_hex: this.elfFile.getUint16(hdr_offset, this.is_lsb).toString(16),
-  //         size_bytes: this.data_types.Elf_Half,
-  //         offset: hdr_offset,
-  //         name: "e_shstrndx"
-  //     };
-  //     hdr_offset += this.data_types.Elf_Half;
-
-  //     /*
-  //     If the file has no section name string  table,  this  member  holds  the  value
-  //     SHN_UNDEF.
-
-  //     If the index of section name string table section is larger than or equal to
-  //     SHN_LORESERVE (0xff00), this member holds SHN_XINDEX (0xffff) and the real index
-  //     of the section name string table section is held in the sh_link member of
-  //     the initial entry in section header table.
-  //     */
-  //     if (e_shstrndx == elf_hdr["SHN_UNDEF"]) {
-  //         e_shstrndx = elf_hdr.e_shstrndx[0]; //SHN_UNDEF
-  //     } else if (e_shstrndx >= elf_hdr["SHN_LORESERVE"]) {
-  //         e_shstrndx = elf_hdr.e_shstrndx[0xffff]; // SHN_XINDEX
-  //     }
-
-  //     return {
-  //         e_type: e_type,
-  //         e_machine: e_machine,
-  //         e_version: e_version,
-  //         e_entry: e_entry,
-  //         e_phoff: e_phoff,
-  //         e_shoff: e_shoff,
-  //         e_flags: e_flags,
-  //         e_ehsize: e_ehsize,
-  //         e_phentsize: e_phentsize,
-  //         e_phnum: e_phnum,
-  //         e_shentsize: e_shentsize,
-  //         e_shnum: e_shnum,
-  //         e_shstrndx: e_shstrndx
-  //     };
-  // }
-
-  // #processElfPhdr32() {
-  // }
 
   // #processElfPhdr64() {
 
@@ -585,7 +174,7 @@ export class TinyELF {
   //             value: Number(this.elfFile.getBigUint64(phdr_entry_offset, this.is_lsb)),
   //             raw_dec: Number(this.elfFile.getBigUint64(phdr_entry_offset, this.is_lsb)).toString(),
   //             raw_hex: Number(this.elfFile.getBigUint64(phdr_entry_offset, this.is_lsb)).toString(16),
-  //             size_bytes: this.data_types.Elf_Addr,
+  //             size_bytes: this.data_types.Elf_Xword,
   //             offset: phdr_entry_offset,
   //             name: "p_filesz"
   //         };
@@ -1821,82 +1410,5 @@ export class TinyELF {
   //     }
 
   //     return symtab_entries;
-  // }
-
-  // /* These functions disassemble and assemble a symbol table st_info field,
-  // which contains the symbol binding and symbol type.  The STB_ and STT_
-  // defines identify the binding and type.  */
-  // #processByClass(functionPrefix, ...args) {
-
-  //     const processorSuffix = this.e_ident.EI_CLASS.value == "ELFCLASS64" ? "64" : "32";
-  //     const processorName = `${functionPrefix}${processorSuffix}`;
-
-  //     const processor = this[processorName];
-
-  //     if (processor && typeof processor === 'function') {
-  //         return processor.call(this, ...args);
-  //     } else {
-  //         const err = new Error(`Unsupported processor for EI_CLASS '${this.e_ident.EI_CLASS.value}' and prefix '${functionPrefix}'`);
-  //         throw err;
-  //     }
-  // }
-
-  // #processElfHdr() {
-  //     return this.processByClass("processElfHdr");
-  // }
-
-  // #processElfPhdr() {
-  //     return this.processByClass("processElfPhdr");
-  // }
-
-  // #processElfShdr() {
-  //     return this.processByClass("processElfShdr");
-  // }
-
-  // #processElfDyn() {
-  //     return this.processByClass("processElfDyn");
-  // }
-
-  // #processElfSymtab() {
-  //     return this.processByClass("processElfSymtab");
-  // }
-
-  // #processElfDynSymtab() {
-  //     return this.processByClass("processElfDynSymtab");
-  // }
-
-  // #processElfRelocation() {
-  //     return this.processByClass("processElfRelocation");
-  // }
-
-  // #processElfVersionRequirements() {
-  //     return this.processByClass("processElfVersionRequirements");
-  // }
-
-  // #processVerneedAux(...args) {
-  //     return this.processByClass("processVerneedAux", ...args);
-  // }
-
-  // #processElfVersionDefinitions() {
-  //     return this.processByClass("processElfVersionDefinitions");
-  // }
-
-  // #processVerdAux(...args) {
-  //     return this.processByClass("processVerdAux", ...args);
-  // }
-
-  // #getFlagName(bitmask, currentFlag, flags) {
-  //     return (bitmask & currentFlag) !== 0 ? flags[currentFlag] : null;
-  // }
-
-  // #getSetFlags(bitmask, flags) {
-  //     const setFlags = [];
-  //     for (const currentFlag in flags) {
-  //         const flagName = this.getFlagName(bitmask, currentFlag, flags);
-  //         if (flagName) {
-  //             setFlags.push(flagName);
-  //         }
-  //     }
-  //     return setFlags;
   // }
 }
