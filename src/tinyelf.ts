@@ -2,14 +2,17 @@ import {
   ElfFile,
   ElfHeaderInterface,
   ElfProgramHeaderInterface,
+  ElfSectionHeaderInterface,
 } from "./lib/ElfBase";
 
 import { ElfHeader } from "./lib/ElfHeader";
 import { ElfProgramHeader } from "./lib/ElfProgramHeader";
+import { ElfSectionHeader } from "./lib/ElfSectionHeader";
 
 export class TinyELF implements ElfFile {
   readonly elfHeader: ElfHeaderInterface;
   readonly elfProgramHeader: ElfProgramHeaderInterface;
+  readonly elfSectionHeader: ElfSectionHeaderInterface;
 
   readonly file: ArrayBuffer;
 
@@ -19,6 +22,7 @@ export class TinyELF implements ElfFile {
     let elfFile = this.parseELF();
     this.elfHeader = elfFile.elfHeader;
     this.elfProgramHeader = elfFile.elfProgramHeader;
+    this.elfSectionHeader = elfFile.elfSectionHeader;
   }
   // async readFile(file:File) {
 
@@ -43,7 +47,6 @@ export class TinyELF implements ElfFile {
   // }
 
   private parseELF(): ElfFile {
-    // let data = new DataView(this.file, 0, this.file.byteLength);
 
     let elfHeader = new ElfHeader(this.file);
     let elfProgramHeader = new ElfProgramHeader(
@@ -55,9 +58,21 @@ export class TinyELF implements ElfFile {
       elfHeader.e_entries.e_phentsize,
     );
 
+    let elfSectionHeader = new ElfSectionHeader(
+      this.file,
+      elfHeader.endianness,
+      elfHeader.bit,
+      elfHeader.e_entries.e_shnum,
+      elfHeader.e_entries.e_shoff,
+      elfHeader.e_entries.e_shentsize,
+      elfHeader.e_entries.e_shstrndx,
+      
+    );
+
     let elfFile: ElfFile = {
       elfHeader: elfHeader,
       elfProgramHeader: elfProgramHeader,
+      elfSectionHeader: elfSectionHeader
     };
 
     return elfFile;
@@ -91,226 +106,6 @@ export class TinyELF implements ElfFile {
     // [this.elf_contents.elf_version_requirements, this.elf_contents.elf_version_requirements_auxillary] = this.#processElfVersionRequirements();
     // [this.elf_contents.elf_version_definitions, this.elf_contents.elf_version_definitions_auxillary] = this.#processElfVersionDefinitions();
   }
-
-  // #getStringFromStringTable(offset) {
-
-  //     // Initialize an array to store the characters
-  //     let chars = [];
-
-  //     // Read the first character from the given offset in the ELF file
-  //     let currentChar = this.elfFile.getUint8(offset, this.is_lsb);
-
-  //     // Initialize an offset counter to track the read position
-  //     let offsetCounter = 0;
-
-  //     // Continue reading characters until a null byte (0) is encountered
-  //     while (currentChar !== 0) {
-  //         // Add the current character to the array
-  //         chars.push(String.fromCharCode(currentChar));
-
-  //         // Increment the offset counter
-  //         offsetCounter++;
-
-  //         // Read the next character from the ELF file
-  //         currentChar = this.elfFile.getUint8(offset + offsetCounter, this.is_lsb);
-  //     }
-
-  //     // Join the characters into a string and return the result
-  //     return chars.join("");
-  // }
-  // #processElfShdr32() {
-  //     // elf32_shdr and elf64_shdr structs are, member-order-wise, exactly the same
-  //     // so we can just re-use the 64-bit function
-  //     return this.processElfShdr64();
-  // }
-
-  // #processElfShdr64() {
-
-  //     /*
-  //     Get .shstrtab-section offset so we can resolve sh_name
-  //     - e_shstrndx contains section header index to .shstrtab (e.g. 36)
-  //     - therefore, e_shstrndx can be used to fetch offset address of
-  //     actual .shstrtab section (e.g. 0x3eb4)
-  //     - sh_name is then just an index offset (e.g. 27) into the section header string table section
-  //     */
-  //     const shstrtab_entry_offset = this.elf_contents.elf_hdr.e_shoff.value + this.elf_contents.elf_hdr.e_shstrndx.value * this.elf_contents.elf_hdr.e_shentsize.value;
-  //     const shstrtab_sh_offset = Number(this.elfFile.getBigUint64(shstrtab_entry_offset + 24, this.is_lsb));
-
-  //     let shdr_entries = [];
-
-  //     for (let shdr_entry_count = 0; shdr_entry_count < this.elf_contents.elf_hdr.e_shnum.value; shdr_entry_count++) {
-
-  //         // calculate shdr_entry offset
-  //         let shdr_entry_offset = this.elf_contents.elf_hdr.e_shoff.value + shdr_entry_count * this.elf_contents.elf_hdr.e_shentsize.value;
-
-  //         /*
-  //         This member specifies the name of the section.
-  //         Its value is an index into the section header string table section,
-  //         giving the location of a null-terminated string.
-  //         */
-  //         const sh_name_offset = this.elfFile.getUint32(shdr_entry_offset, this.is_lsb);
-  //         const sh_name = {
-  //             value: this.getStringFromStringTable(shstrtab_sh_offset + sh_name_offset),
-  //             raw_dec: this.elfFile.getUint32(shdr_entry_offset, this.is_lsb).toString(),
-  //             raw_hex: this.elfFile.getUint32(shdr_entry_offset, this.is_lsb).toString(16),
-  //             size_bytes: this.data_types.Elf_Word,
-  //             offset: shdr_entry_offset,
-  //             name: "sh_name"
-  //         };
-  //         shdr_entry_offset += this.data_types.Elf_Word;
-
-  //         /*
-  //         This member categorizes the section's contents and semantics.
-  //         */
-  //         const sh_type = {
-  //             value: elf_shdr.sh_type[this.elfFile.getUint32(shdr_entry_offset, this.is_lsb)],
-  //             raw_dec: this.elfFile.getUint32(shdr_entry_offset, this.is_lsb).toString(),
-  //             raw_hex: this.elfFile.getUint32(shdr_entry_offset, this.is_lsb).toString(16),
-  //             size_bytes: this.data_types.Elf_Word,
-  //             offset: shdr_entry_offset,
-  //             name: "sh_type"
-  //         };
-  //         shdr_entry_offset += this.data_types.Elf_Word;
-
-  //         /*
-  //         Sections support one-bit flags that describe miscellaneous attributes.
-  //         If a flag bit is set in sh_flags, the attribute is "on" for the section.
-  //         Otherwise, the attribute is "off"  or  does not apply.
-  //         Undefined attributes are set to zero.
-  //         */
-  //         const sh_flags = {
-  //             value: this.getSetFlags(this.elfFile.getUint32(shdr_entry_offset, this.is_lsb), elf_shdr.sh_flags),
-  //             raw_dec: this.elfFile.getUint32(shdr_entry_offset, this.is_lsb).toString(),
-  //             raw_hex: this.elfFile.getUint32(shdr_entry_offset, this.is_lsb).toString(16),
-  //             size_bytes: this.data_types.Elf_Xword,
-  //             offset: shdr_entry_offset,
-  //             name: "sh_flags"
-  //         };
-  //         shdr_entry_offset += this.data_types.Elf_Xword;
-
-  //         /*
-  //         If this section appears in the (virtual) memory image of a process, this member
-  //         holds the address at which the section's first byte should reside.
-  //         Otherwise, the member contains zero.
-  //         */
-  //         const sh_addr = {
-  //             value: Number(this.elfFile.getBigUint64(shdr_entry_offset, this.is_lsb)),
-  //             raw_dec: Number(this.elfFile.getBigUint64(shdr_entry_offset, this.is_lsb)).toString(),
-  //             raw_hex: Number(this.elfFile.getBigUint64(shdr_entry_offset, this.is_lsb)).toString(16),
-  //             size_bytes: this.data_types.Elf_Addr,
-  //             offset: shdr_entry_offset,
-  //             name: "sh_addr"
-  //         };
-  //         shdr_entry_offset += this.data_types.Elf_Addr;
-
-  //         /*
-  //         This  member's value holds the byte offset from the beginning of the file to
-  //         the first byte in the section. One section type, SHT_NOBITS, occupies no space
-  //         in the file, and its sh_offset member locates the conceptual placement in the file.
-  //         */
-  //         const sh_offset = {
-  //             value: Number(this.elfFile.getBigUint64(shdr_entry_offset, this.is_lsb)),
-  //             raw_dec: Number(this.elfFile.getBigUint64(shdr_entry_offset, this.is_lsb)).toString(),
-  //             raw_hex: Number(this.elfFile.getBigUint64(shdr_entry_offset, this.is_lsb)).toString(16),
-  //             size_bytes: this.data_types.Elf_Off,
-  //             offset: shdr_entry_offset,
-  //             name: "sh_offset"
-  //         };
-  //         shdr_entry_offset += this.data_types.Elf_Off;
-
-  //         /*
-  //         This member holds the section's size in bytes. Unless the section type is SHT_NOBITS,
-  //         the section occupies sh_size bytes in the file. A section of type SHT_NOBITS may have a nonzero size,
-  //         but it occupies no space in the file.
-  //         */
-  //         const sh_size = {
-  //             value: Number(this.elfFile.getBigUint64(shdr_entry_offset, this.is_lsb)),
-  //             raw_dec: Number(this.elfFile.getBigUint64(shdr_entry_offset, this.is_lsb)).toString(),
-  //             raw_hex: Number(this.elfFile.getBigUint64(shdr_entry_offset, this.is_lsb)).toString(16),
-  //             size_bytes: this.data_types.Elf_Xword,
-  //             offset: shdr_entry_offset,
-  //             name: "sh_size"
-  //         };
-  //         shdr_entry_offset += this.data_types.Elf_Xword;
-
-  //         /*
-  //         This member holds a section header table index link, whose interpretation depends on the section type.
-  //         */
-  //         const sh_link = {
-  //             value: this.elfFile.getUint32(shdr_entry_offset, this.is_lsb),
-  //             raw_dec: this.elfFile.getUint32(shdr_entry_offset, this.is_lsb).toString(),
-  //             raw_hex: this.elfFile.getUint32(shdr_entry_offset, this.is_lsb).toString(16),
-  //             size_bytes: this.data_types.Elf_Word,
-  //             offset: shdr_entry_offset,
-  //             name: "sh_link"
-  //         };
-  //         shdr_entry_offset += this.data_types.Elf_Word;
-
-  //         /*
-  //         This member holds extra information, whose interpretation depends on the section type.
-  //         */
-  //         const sh_info = {
-  //             value: this.elfFile.getUint32(shdr_entry_offset, this.is_lsb),
-  //             raw_dec: this.elfFile.getUint32(shdr_entry_offset, this.is_lsb).toString(),
-  //             raw_hex: this.elfFile.getUint32(shdr_entry_offset, this.is_lsb).toString(16),
-  //             size_bytes: this.data_types.Elf_Word,
-  //             offset: shdr_entry_offset,
-  //             name: "sh_info"
-  //         };
-  //         shdr_entry_offset += this.data_types.Elf_Word;
-
-  //         /*
-  //         Some sections have address alignment constraints. If a section holds a doubleword,
-  //         the system must ensure doubleword alignment for the entire section. That is, the value of sh_addr must
-  //         be congruent to zero, modulo the value of sh_addralign.
-  //         Only zero and positive integral powers of two are allowed.
-  //         The value 0 or 1 means that the section has no alignment constraints.
-  //         */
-  //         const sh_addralign = {
-  //             value: Number(this.elfFile.getBigUint64(shdr_entry_offset, this.is_lsb)),
-  //             raw_dec: Number(this.elfFile.getBigUint64(shdr_entry_offset, this.is_lsb)).toString(),
-  //             raw_hex: Number(this.elfFile.getBigUint64(shdr_entry_offset, this.is_lsb)).toString(16),
-  //             size_bytes: this.data_types.Elf_Xword,
-  //             offset: shdr_entry_offset,
-  //             name: "sh_addralign"
-  //         };
-  //         shdr_entry_offset += this.data_types.Elf_Xword;
-
-  //         /*
-  //         Some sections hold a table of fixed-sized entries, such as a symbol table.
-  //         For such a section, this member gives the size in bytes for each entry.
-  //         This member contains zero if the section
-  //         does not hold a table of fixed-size entries.
-  //         */
-  //         const sh_entsize = {
-  //             value: Number(this.elfFile.getBigUint64(shdr_entry_offset, this.is_lsb)),
-  //             raw_dec: Number(this.elfFile.getBigUint64(shdr_entry_offset, this.is_lsb)).toString(),
-  //             raw_hex: Number(this.elfFile.getBigUint64(shdr_entry_offset, this.is_lsb)).toString(16),
-  //             size_bytes: this.data_types.Elf_Xword,
-  //             offset: shdr_entry_offset,
-  //             name: "sh_entsize"
-  //         };
-  //         shdr_entry_offset += this.data_types.Elf_Xword;
-
-  //         let shdr_entry = {
-  //             sh_name: sh_name,
-  //             sh_type: sh_type,
-  //             sh_flags: sh_flags,
-  //             sh_addr: sh_addr,
-  //             sh_offset: sh_offset,
-  //             sh_size: sh_size,
-  //             sh_link: sh_link,
-  //             sh_info: sh_info,
-  //             sh_addralign: sh_addralign,
-  //             sh_entsize: sh_entsize
-  //         };
-
-  //         shdr_entries.push(shdr_entry);
-  //     }
-
-  //     return shdr_entries;
-
-  // }
 
   // #assignFlagValues(d_tag, d_un) {
 

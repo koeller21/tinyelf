@@ -56,6 +56,7 @@ export type ElfData = {
 export interface ElfFile {
   elfHeader: ElfHeaderInterface;
   elfProgramHeader: ElfProgramHeaderInterface;
+  elfSectionHeader: ElfSectionHeaderInterface;
 }
 
 /**
@@ -115,6 +116,26 @@ export interface ElfProgramHeaderEntry {
   p_filesz: ElfData;
   p_memsz: ElfData;
   p_align: ElfData;
+}
+
+/**
+ * Interface for the ELF section header structure.
+ */
+export interface ElfSectionHeaderInterface {
+  elfSectionHeader: ElfSectionHeaderEntry[];
+}
+
+export interface ElfSectionHeaderEntry {
+  sh_name : ElfData;
+  sh_type : ElfData;
+  sh_flags : ElfData;
+  sh_addr : ElfData;
+  sh_offset : ElfData;
+  sh_size : ElfData;
+  sh_link : ElfData;
+  sh_info : ElfData;
+  sh_addralign : ElfData;
+  sh_entsize : ElfData;
 }
 
 /**
