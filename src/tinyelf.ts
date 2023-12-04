@@ -3,16 +3,19 @@ import {
   ElfHeaderInterface,
   ElfProgramHeaderInterface,
   ElfSectionHeaderInterface,
+  ElfDynamicInterface,
 } from "./lib/ElfBase";
 
 import { ElfHeader } from "./lib/ElfHeader";
 import { ElfProgramHeader } from "./lib/ElfProgramHeader";
 import { ElfSectionHeader } from "./lib/ElfSectionHeader";
+import { ElfDynamic } from "./lib/ElfDynamic";
 
 export class TinyELF implements ElfFile {
   readonly elfHeader: ElfHeaderInterface;
   readonly elfProgramHeader: ElfProgramHeaderInterface;
   readonly elfSectionHeader: ElfSectionHeaderInterface;
+  readonly elfDynamic: ElfDynamicInterface;
 
   readonly file: ArrayBuffer;
 
@@ -23,6 +26,7 @@ export class TinyELF implements ElfFile {
     this.elfHeader = elfFile.elfHeader;
     this.elfProgramHeader = elfFile.elfProgramHeader;
     this.elfSectionHeader = elfFile.elfSectionHeader;
+    this.elfDynamic = elfFile.elfDynamic;
   }
   // async readFile(file:File) {
 
@@ -66,13 +70,20 @@ export class TinyELF implements ElfFile {
       elfHeader.e_entries.e_shoff,
       elfHeader.e_entries.e_shentsize,
       elfHeader.e_entries.e_shstrndx,
-      
+    );
+
+    let elfDynamic = new ElfDynamic(
+      this.file,
+      elfHeader.endianness,
+      elfHeader.bit,
+      elfSectionHeader
     );
 
     let elfFile: ElfFile = {
       elfHeader: elfHeader,
       elfProgramHeader: elfProgramHeader,
-      elfSectionHeader: elfSectionHeader
+      elfSectionHeader: elfSectionHeader,
+      elfDynamic: elfDynamic
     };
 
     return elfFile;
@@ -106,136 +117,6 @@ export class TinyELF implements ElfFile {
     // [this.elf_contents.elf_version_requirements, this.elf_contents.elf_version_requirements_auxillary] = this.#processElfVersionRequirements();
     // [this.elf_contents.elf_version_definitions, this.elf_contents.elf_version_definitions_auxillary] = this.#processElfVersionDefinitions();
   }
-
-  // #assignFlagValues(d_tag, d_un) {
-
-  //     if (d_tag.value == "DT_FLAGS") {
-  //         // DT_FLAGS
-  //         d_un.value = this.#parseFlagBits("DT_FLAGS", d_un.value);
-  //     } else if (d_tag.value == "DT_FLAGS_1") {
-  //         // DT_FLAGS_1
-  //         d_un.value = this.#parseFlagBits("DT_FLAGS_1", d_un.value);
-  //     } else if (d_tag.value == "DT_POSFLAG_1") {
-  //         // DT_POSFLAG_1
-  //         d_un.value = this.#parseFlagBits("DT_POSFLAG_1", d_un.value);
-  //     } else if (d_tag.value == "DT_FEATURE") {
-  //         // DT_FEATURE
-  //         d_un.value = this.#parseFlagBits("DT_FEATURE", d_un.value);
-  //     } else if (d_tag.value == "DT_GNU_FLAGS_1") {
-  //         // DT_GNU_FLAGS_1
-  //         d_un.value = this.#parseFlagBits("DT_GNU_FLAGS_1", d_un.value);
-  //     }
-
-  //     return d_un;
-
-  // }
-
-  // #parseFlagBits(flag_type, d_un_val) {
-
-  //     let flags = [];
-
-  //     while (d_un_val) {
-
-  //         // isolates the least significant set bit im d_un_val
-  //         const flag = d_un_val & -d_un_val;
-
-  //         // clears the least significant set bit in flag
-  //         d_un_val &= ~flag;
-
-  //         // switch based on flag type
-  //         switch (flag_type) {
-  //             case "DT_FLAGS":
-  //                 flags.push(DT_FLAGS[flag]);
-  //                 break;
-  //             case "DT_FLAGS_1":
-  //                 flags.push(DT_FLAGS_1[flag]);
-  //                 break;
-  //             case "DT_POSFLAG_1":
-  //                 flags.push(DT_POSFLAG_1[flag]);
-  //                 break;
-  //             case "DT_FEATURE":
-  //                 flags.push(DT_FEATURE[flag]);
-  //                 break;
-  //             case "DT_GNU_FLAGS_1":
-  //                 flags.push(DT_GNU_FLAGS_1[flag]);
-  //                 break;
-  //         }
-  //     }
-
-  //     return flags;
-  // }
-
-  // #processElfDyn32() {
-  // }
-
-  // #processElfDyn64() {
-  //     /*
-  //     The .dynamic section contains a series of structures
-  //     that hold relevant dynamic linking information.
-
-  //     This function processes the .dynamic section.
-  //     */
-
-  //     let dynamic = null;
-
-  //     for (const element of this.elf_contents.elf_shdr) {
-  //         if (element.sh_type.value == "SHT_DYNAMIC") {
-  //             dynamic = element;
-  //         }
-  //     }
-
-  //     // check if dynamic section even exists, if not, return null
-  //     if (dynamic == null) {
-  //         return null;
-  //     }
-
-  //     // get number of entries in dynamic section
-  //     let dynamic_entries_number = dynamic.sh_size.value / dynamic.sh_entsize.value;
-
-  //     let dynamic_entries = [];
-
-  //     for (let dynamic_entry_count = 0; dynamic_entry_count < dynamic_entries_number; dynamic_entry_count++) {
-
-  //         // calculate offset
-  //         let dynamic_offset = dynamic.sh_offset.value + (dynamic_entry_count * dynamic.sh_entsize.value);
-
-  //         /*
-  //         The d_tag member controls the interpretation of the d_un entry
-  //         */
-  //         const d_tag = {
-  //             value: elf_dynamic.d_tag[this.elfFile.getBigInt64(dynamic_offset, this.is_lsb)],
-  //             raw_dec: this.elfFile.getBigInt64(dynamic_offset, this.is_lsb).toString(),
-  //             raw_hex: this.elfFile.getBigInt64(dynamic_offset, this.is_lsb).toString(16),
-  //             size_bytes: this.data_types.Elf_Sxword,
-  //             offset: dynamic_offset,
-  //             name: "d_tag"
-  //         };
-  //         dynamic_offset += this.data_types.Elf_Sxword;
-
-  //         let d_un = {
-  //             value: Number(this.elfFile.getBigUint64(dynamic_offset, this.is_lsb)),
-  //             raw_dec: this.elfFile.getBigUint64(dynamic_offset, this.is_lsb).toString(),
-  //             raw_hex: this.elfFile.getBigUint64(dynamic_offset, this.is_lsb).toString(16),
-  //             size_bytes: this.data_types.Elf_Xword,
-  //             offset: dynamic_offset,
-  //             name: "d_un"
-  //         };
-  //         dynamic_offset += this.data_types.Elf_Xword;
-
-  //         d_un = this.assignFlagValues(d_tag, d_un);
-
-  //         let dynamic_entry = {
-  //             d_tag: d_tag,
-  //             d_un: d_un
-  //         };
-
-  //         dynamic_entries.push(dynamic_entry);
-
-  //     }
-
-  //     return dynamic_entries;
-
-  // }
 
   // #getRelocType(r_info) {
   //     /*

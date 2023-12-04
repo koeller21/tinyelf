@@ -22,9 +22,7 @@ export class ElfSectionHeader extends ElfBase implements ElfSectionHeaderInterfa
         
         let [elfSectionHeader, last_offset] = this.parse(buffer, e_shnum, e_shoff, e_shentsize, e_shstrndx);
         this.elfSectionHeader = elfSectionHeader;
-        console.log(e_shoff.raw_dec);
-        console.log(last_offset);
-        console.log(buffer.byteLength);
+
         // set data
         this.data = new DataView(buffer, e_shoff.raw_dec, last_offset-e_shoff.raw_dec);
     }

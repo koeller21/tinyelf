@@ -57,6 +57,7 @@ export interface ElfFile {
   elfHeader: ElfHeaderInterface;
   elfProgramHeader: ElfProgramHeaderInterface;
   elfSectionHeader: ElfSectionHeaderInterface;
+  elfDynamic: ElfDynamicInterface;
 }
 
 /**
@@ -136,6 +137,18 @@ export interface ElfSectionHeaderEntry {
   sh_info : ElfData;
   sh_addralign : ElfData;
   sh_entsize : ElfData;
+}
+
+/**
+ * Interface for the ELF dynamic structure.
+ */
+export interface ElfDynamicInterface {
+  elfDynamic: ElfDynamicEntry[] | null;
+}
+
+export interface ElfDynamicEntry {
+  d_tag : ElfData;
+  d_un : ElfData;
 }
 
 /**
