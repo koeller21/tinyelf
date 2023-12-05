@@ -52,9 +52,10 @@ export class ElfDataReader {
     * @param name - The name of the data being read (for reference in the returned ElfData object).
     * @param size - The size of the data to read in bytes.
     * @param encoding - Optional encoding map for translating read values to strings.
+    * @param update - Optional whether offset should be increased.
     * @returns {ElfData} An object representing the read data, including its raw and formatted values.
     */
-    readData(name: string, size: number, encoding?: Encoding): ElfData {
+    readData(name: string, size: number, encoding?: Encoding, update: boolean = true,): ElfData {
         let value: number | string;
         
         // Reads raw value from the DataView based on the size
@@ -71,7 +72,9 @@ export class ElfDataReader {
         };
         
         // Updates the offset for the next read operation
-        this.offset += size;
+        if (update) {
+            this.offset += size;
+        }
         
         return elfData;
     }

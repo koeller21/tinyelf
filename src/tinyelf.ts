@@ -4,18 +4,21 @@ import {
   ElfProgramHeaderInterface,
   ElfSectionHeaderInterface,
   ElfDynamicInterface,
+  ElfSymbolTableInterface,
 } from "./lib/ElfBase";
 
 import { ElfHeader } from "./lib/ElfHeader";
 import { ElfProgramHeader } from "./lib/ElfProgramHeader";
 import { ElfSectionHeader } from "./lib/ElfSectionHeader";
 import { ElfDynamic } from "./lib/ElfDynamic";
+import { ElfSymbolTable } from "./lib/ElfSymbolTable";
 
 export class TinyELF implements ElfFile {
   readonly elfHeader: ElfHeaderInterface;
   readonly elfProgramHeader: ElfProgramHeaderInterface;
   readonly elfSectionHeader: ElfSectionHeaderInterface;
   readonly elfDynamic: ElfDynamicInterface;
+  readonly elfSymbolTable: ElfSymbolTableInterface; 
 
   readonly file: ArrayBuffer;
 
@@ -27,6 +30,7 @@ export class TinyELF implements ElfFile {
     this.elfProgramHeader = elfFile.elfProgramHeader;
     this.elfSectionHeader = elfFile.elfSectionHeader;
     this.elfDynamic = elfFile.elfDynamic;
+    this.elfSymbolTable = elfFile.elfSymbolTable;
   }
   // async readFile(file:File) {
 
@@ -79,11 +83,19 @@ export class TinyELF implements ElfFile {
       elfSectionHeader
     );
 
+    let elfSymbolTable = new ElfSymbolTable(
+      this.file,
+      elfHeader.endianness,
+      elfHeader.bit,
+      elfSectionHeader
+    );
+
     let elfFile: ElfFile = {
       elfHeader: elfHeader,
       elfProgramHeader: elfProgramHeader,
       elfSectionHeader: elfSectionHeader,
-      elfDynamic: elfDynamic
+      elfDynamic: elfDynamic,
+      elfSymbolTable : elfSymbolTable,
     };
 
     return elfFile;

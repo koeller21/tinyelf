@@ -58,6 +58,7 @@ export interface ElfFile {
   elfProgramHeader: ElfProgramHeaderInterface;
   elfSectionHeader: ElfSectionHeaderInterface;
   elfDynamic: ElfDynamicInterface;
+  elfSymbolTable : ElfSymbolTableInterface;
 }
 
 /**
@@ -150,6 +151,25 @@ export interface ElfDynamicEntry {
   d_tag : ElfData;
   d_un : ElfData;
 }
+
+
+/**
+ * Interface for the ELF symbol table structure.
+ */
+export interface ElfSymbolTableInterface {
+  elfSymbolTable: ElfSymbolTableEntry[] | null;
+}
+
+export interface ElfSymbolTableEntry {
+  st_name : ElfData;
+  st_bind : ElfData;
+  st_type : ElfData;
+  st_other : ElfData;
+  st_shndx : ElfData;
+  st_value : ElfData;
+  st_size : ElfData;
+}
+
 
 /**
  * Type for encoding mapping. Maps a number to a string representation.
