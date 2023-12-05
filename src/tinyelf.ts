@@ -19,6 +19,7 @@ export class TinyELF implements ElfFile {
   readonly elfSectionHeader: ElfSectionHeaderInterface;
   readonly elfDynamic: ElfDynamicInterface;
   readonly elfSymbolTable: ElfSymbolTableInterface; 
+  readonly elfDynamicSymbolTable: ElfSymbolTableInterface; 
 
   readonly file: ArrayBuffer;
 
@@ -31,6 +32,7 @@ export class TinyELF implements ElfFile {
     this.elfSectionHeader = elfFile.elfSectionHeader;
     this.elfDynamic = elfFile.elfDynamic;
     this.elfSymbolTable = elfFile.elfSymbolTable;
+    this.elfDynamicSymbolTable = elfFile.elfDynamicSymbolTable;
   }
   // async readFile(file:File) {
 
@@ -87,8 +89,19 @@ export class TinyELF implements ElfFile {
       this.file,
       elfHeader.endianness,
       elfHeader.bit,
-      elfSectionHeader
+      elfSectionHeader,
+      "SHT_SYMTAB"
     );
+
+
+    let elfDynamicSymbolTable = new ElfSymbolTable(
+      this.file,
+      elfHeader.endianness,
+      elfHeader.bit,
+      elfSectionHeader,
+      "SHT_DYNSYM"
+    );
+
 
     let elfFile: ElfFile = {
       elfHeader: elfHeader,
@@ -96,6 +109,7 @@ export class TinyELF implements ElfFile {
       elfSectionHeader: elfSectionHeader,
       elfDynamic: elfDynamic,
       elfSymbolTable : elfSymbolTable,
+      elfDynamicSymbolTable : elfDynamicSymbolTable,
     };
 
     return elfFile;
@@ -778,188 +792,4 @@ export class TinyELF implements ElfFile {
 
   // }
 
-  // #processElfDynSymtab32() {
-  // }
-
-  // #processElfDynSymtab64() {
-  //     return this.processElfSymbolTables("SHT_DYNSYM");
-  // }
-
-  // #processElfSymtab32() {
-  // }
-
-  // #processElfSymtab64() {
-  //     return this.processElfSymbolTables("SHT_SYMTAB");
-  // }
-
-  // #processElfSymbolTables(symbol_table_type) {
-
-  //     let symtab = null;
-  //     let strtab_offset = 0; // strtab used for symtab st_name
-
-  //     // get symtab from elf section header
-  //     // to my knowledge, there no other way but to check for
-  //     // sh_type SHT_SYMTAB to get symbol table
-  //     // for the dynamic symbols, you could also check the dynamic section
-  //     // for DT_SYMTAB
-  //     for (const element of this.elf_contents.elf_shdr) {
-  //         if (element.sh_type.value == symbol_table_type) {
-  //             symtab = element;
-  //             strtab_offset = this.elf_contents.elf_shdr[symtab.sh_link.value].sh_offset.value;
-
-  //         }
-  //     }
-
-  //     // Handle if no symtab section present (e.g. if not compiled with -g flag in gcc)
-  //     if (symtab == null) {
-  //         return null;
-  //     }
-
-  //     // check if sh_size is 0 or sh_size is greater than entire file size, if yes, abort
-  //     if (symtab.sh_size.value == 0 || symtab.sh_size.value > this.file_length) {
-  //         const err = new Error("symbol table section size error: " + symtab.sh_size.value);
-  //         return err;
-  //     }
-
-  //     // check if sh_entsize is 0 or if sh_entsize is greater than sh_size.value, if yes, abort
-  //     if (symtab.sh_entsize.value == 0 || symtab.sh_entsize.value > symtab.sh_size.value) {
-  //         const err = new Error("symbol table section table member size error: " + symtab.sh_entsize.value);
-  //         return err;
-  //     }
-
-  //     // get number of entries in symtable
-  //     let symtab_entries_number = symtab.sh_size.value / symtab.sh_entsize.value;
-
-  //     let symtab_entries = [];
-
-  //     for (let symtab_entry_count = 0; symtab_entry_count < symtab_entries_number; symtab_entry_count++) {
-
-  //         // calculate offset
-  //         let symtab_offset = symtab.sh_offset.value + (symtab_entry_count * symtab.sh_entsize.value);
-
-  //         /*
-  //         This  member holds an index into the object file's symbol string table, which holds
-  //         character representations of the symbol names. If the value is nonzero, it represents a
-  //         string table index that gives the symbol name. Otherwise, the symbol has no name.
-  //         */
-  //         const st_name_offset = this.elfFile.getUint32(symtab_offset, this.is_lsb);
-  //         const st_name = {
-  //             value: this.getStringFromStringTable(strtab_offset + st_name_offset),
-  //             raw_dec: st_name_offset.toString(),
-  //             raw_hex: st_name_offset.toString(16),
-  //             size_bytes: this.data_types.Elf_Word,
-  //             offset: symtab_offset,
-  //             name: "st_name"
-  //         };
-  //         symtab_offset += this.data_types.Elf_Word;
-
-  //         /*
-  //         This member specifies the symbol's type and binding attributes.
-  //         Its made up of 8 bits, the first four bits represent the type (T)
-  //         and the last four bits represent the binding (B):
-
-  //         bit value | 128 | 64 | 32 | 16 | 8 | 4 | 2 | 1 |
-  //         {B,T}     | B   | B  | B  | B  | T | T | T | T |
-  //         Operation |         >> 4       |       &0xF    |
-
-  //         Thus, we do some bit shifting and bitwise operation to get the
-  //         type and the binding
-  //         */
-  //         const st_bind = {
-  //             value: elf_sym.st_bind[this.elfFile.getUint8(symtab_offset, this.is_lsb) >> 4],
-  //             raw_dec: (this.elfFile.getUint8(symtab_offset, this.is_lsb) >> 4).toString(),
-  //             raw_hex: (this.elfFile.getUint8(symtab_offset, this.is_lsb) >> 4).toString(16),
-  //             size_bytes: this.data_types.char,
-  //             offset: symtab_offset,
-  //             name: "st_bind"
-  //         };
-  //         const st_type = {
-  //             value: elf_sym.st_type[this.elfFile.getUint8(symtab_offset, this.is_lsb) & 0xF],
-  //             raw_dec: (this.elfFile.getUint8(symtab_offset, this.is_lsb) & 0xF).toString(),
-  //             raw_hex: (this.elfFile.getUint8(symtab_offset, this.is_lsb) & 0xF).toString(16),
-  //             size_bytes: this.data_types.char,
-  //             offset: symtab_offset,
-  //             name: "st_type"
-  //         };
-  //         symtab_offset += this.data_types.char;
-
-  //         /*
-  //         This member defines the symbol visibility.
-  //         This controls how a symbol may be accessed once it has
-  //         become part of an executable or shared library.
-
-  //         Its made up of 8 bits but only the first two represent (4 combinations) the visibility (V), thus
-  //         bit value | 128 | 64 | 32 | 16 | 8 | 4 | 2 | 1 |
-  //         {V}       | -   | -  | -  | -  | - | - | V | V |
-  //         Operation |            -               |  &0x3 |
-
-  //         */
-  //         const st_other = {
-  //             value: elf_sym.st_other[this.elfFile.getUint8(symtab_offset, this.is_lsb) & 0x3],
-  //             raw_dec: (this.elfFile.getUint8(symtab_offset, this.is_lsb) & 0x3).toString(),
-  //             raw_hex: (this.elfFile.getUint8(symtab_offset, this.is_lsb) & 0x3).toString(16),
-  //             size_bytes: this.data_types.char,
-  //             offset: symtab_offset,
-  //             name: "st_other"
-  //         };
-  //         symtab_offset += this.data_types.char;
-
-  //         /*
-  //         Every symbol table entry is "defined" in relation to some section.
-  //         This member holds the relevant section header table index.
-  //         */
-  //         const st_shndx = {
-  //             value: this.elfFile.getUint16(symtab_offset, this.is_lsb),
-  //             raw_dec: this.elfFile.getUint16(symtab_offset, this.is_lsb).toString(),
-  //             raw_hex: this.elfFile.getUint16(symtab_offset, this.is_lsb).toString(16),
-  //             size_bytes: this.data_types.Elf_Half,
-  //             offset: symtab_offset,
-  //             name: "st_shndx"
-  //         };
-  //         symtab_offset += this.data_types.Elf_Half;
-
-  //         /*
-  //         This member gives the value of the associated symbol.
-  //         This actually points to the address of that symbol if the
-  //         st_type is of FUNC
-  //         */
-  //         const st_value = {
-  //             value: Number(this.elfFile.getBigUint64(symtab_offset, this.is_lsb)),
-  //             raw_dec: Number(this.elfFile.getBigUint64(symtab_offset, this.is_lsb)).toString(),
-  //             raw_hex: Number(this.elfFile.getBigUint64(symtab_offset, this.is_lsb)).toString(16),
-  //             size_bytes: this.data_types.Elf_Addr,
-  //             offset: symtab_offset,
-  //             name: "st_value"
-  //         };
-  //         symtab_offset += this.data_types.Elf_Addr;
-
-  //         /*
-  //         Many symbols have associated sizes. This member holds zero if the symbol has no size or an unknown size.
-  //         */
-  //         const st_size = {
-  //             value: Number(this.elfFile.getBigUint64(symtab_offset, this.is_lsb)),
-  //             raw_dec: Number(this.elfFile.getBigUint64(symtab_offset, this.is_lsb)).toString(),
-  //             raw_hex: Number(this.elfFile.getBigUint64(symtab_offset, this.is_lsb)).toString(16),
-  //             size_bytes: this.data_types.Elf_Xword,
-  //             offset: symtab_offset,
-  //             name: "st_size"
-  //         };
-  //         symtab_offset += this.data_types.Elf_Xword;
-
-  //         let symtab_entry = {
-  //             st_name: st_name,
-  //             st_bind: st_bind,
-  //             st_type: st_type,
-  //             st_other: st_other,
-  //             st_shndx: st_shndx,
-  //             st_value: st_value,
-  //             st_size: st_size
-  //         };
-
-  //         symtab_entries.push(symtab_entry);
-
-  //     }
-
-  //     return symtab_entries;
-  // }
 }

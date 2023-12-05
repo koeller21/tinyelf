@@ -18,17 +18,17 @@ export class ElfSymbolTable extends ElfBase implements ElfSymbolTableInterface {
     
     elfSymbolTable: ElfSymbolTableEntry[] | null;
     
-    constructor(buffer: ArrayBuffer, endianness: ElfEndianness, bit: ElfBitVersion, elfSectionHeader : ElfSectionHeaderInterface) {
+    constructor(buffer: ArrayBuffer, endianness: ElfEndianness, bit: ElfBitVersion, elfSectionHeader : ElfSectionHeaderInterface, symbolTableType : string) {
         super(endianness, bit);
         
-        let [elfSymbolTable, first_offset, last_offset] = this.parse(buffer, "SHT_SYMTAB", elfSectionHeader);
+        let [elfSymbolTable, first_offset, last_offset] = this.parse(buffer, symbolTableType, elfSectionHeader);
         this.elfSymbolTable = elfSymbolTable;
         
         // set data
         this.data = new DataView(buffer, first_offset, last_offset-first_offset);
     }
     
-    private parse(buffer: ArrayBuffer, symbol_table_type: string, elfSectionHeader : ElfSectionHeaderInterface): [ElfSymbolTableEntry[] | null, number, number] {
+    private parse(buffer: ArrayBuffer, symbolTableType: string, elfSectionHeader : ElfSectionHeaderInterface): [ElfSymbolTableEntry[] | null, number, number] {
         
         let last_offset = 0;
         
@@ -38,9 +38,9 @@ export class ElfSymbolTable extends ElfBase implements ElfSymbolTableInterface {
         // -- Get symtab from elf section header
         // To my knowledge, there no other way but to check for
         // sh_type 'SHT_SYMTAB' to get symbol table.
-        // For the dynamic symbols, you also check the dynamic section for SHT_DYNSYM
+        // For the dynamic symbols, you also check the dynamic section for 'SHT_DYNSYM'
         for (const element of elfSectionHeader.elfSectionHeader) {
-            if (element.sh_type.value == symbol_table_type) {
+            if (element.sh_type.value == symbolTableType) {
                 symtab = element;
                 strtab_offset = elfSectionHeader.elfSectionHeader[symtab.sh_link.raw_dec].sh_offset.raw_dec;
             }
@@ -110,7 +110,7 @@ export class ElfSymbolTable extends ElfBase implements ElfSymbolTableInterface {
             
             dtype = this.bit == 32 ? Elf32Types.char : Elf64Types.char;
             const st_type = dataReader.readData("st_type", dtype);
-            st_type.raw_dec = st_type.raw_dec >> 4;
+            st_type.raw_dec = st_type.raw_dec &0xF;
             st_type.value = elf_sym.st_type[(st_type.raw_dec) as keyof typeof elf_sym.st_type];
             
             

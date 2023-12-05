@@ -59,6 +59,7 @@ export interface ElfFile {
   elfSectionHeader: ElfSectionHeaderInterface;
   elfDynamic: ElfDynamicInterface;
   elfSymbolTable : ElfSymbolTableInterface;
+  elfDynamicSymbolTable : ElfSymbolTableInterface;
 }
 
 /**
