@@ -1,6 +1,6 @@
 import { elf_sym} from "./constants/common";
 
-import { ElfDataReader } from "./ElfReader";
+import { ElfDataReader } from "./ElfDataReader";
 
 import {
     ElfSectionHeaderInterface,
@@ -9,7 +9,6 @@ import {
     ElfBase,
     Elf32Types,
     Elf64Types,
-    ElfData,
     ElfEndianness,
     ElfBitVersion,
 } from "./ElfBase";

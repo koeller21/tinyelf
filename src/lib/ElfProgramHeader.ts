@@ -1,6 +1,6 @@
 import { elf_phdr } from "./constants/common";
 
-import { ElfDataReader } from "./ElfReader";
+import { ElfDataReader } from "./ElfDataReader";
 
 import {
     ElfProgramHeaderInterface,

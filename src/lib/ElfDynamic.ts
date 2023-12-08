@@ -1,6 +1,6 @@
 import { elf_dynamic, DT_FLAGS, DT_GNU_FLAGS_1, DT_FEATURE, DT_FLAGS_1, DT_POSFLAG_1 } from "./constants/common";
 
-import { ElfDataReader } from "./ElfReader";
+import { ElfDataReader } from "./ElfDataReader";
 
 import {
     ElfSectionHeaderInterface,

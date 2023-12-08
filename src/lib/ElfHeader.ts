@@ -1,6 +1,6 @@
 import { e_ident, elf_hdr } from "./constants/common";
 
-import { ElfDataReader } from "./ElfReader";
+import { ElfDataReader } from "./ElfDataReader";
 
 import {
 	ElfHeaderInterface,

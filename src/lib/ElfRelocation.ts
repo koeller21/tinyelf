@@ -2,7 +2,7 @@ import { R_SPARC_TYPE } from "./constants/sparc";
 import { R_X86_64_TYPE} from "./constants/x86-64";
 import { R_MIPS_TYPE } from "./constants/mips";
 
-import { ElfDataReader } from "./ElfReader";
+import { ElfDataReader } from "./ElfDataReader";
 
 import {
     ElfSectionHeaderInterface,

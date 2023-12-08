@@ -1,6 +1,6 @@
 import { elf_shdr } from "./constants/common";
 
-import { ElfDataReader } from "./ElfReader";
+import { ElfDataReader } from "./ElfDataReader";
 
 import {
     ElfSectionHeaderInterface,
