@@ -5,7 +5,7 @@ import {
   ElfSectionHeaderInterface,
   ElfDynamicInterface,
   ElfSymbolTableInterface,
-  RelocationType,
+  ElfRelocationInterface,
 } from "./lib/ElfBase";
 
 import { ElfHeader } from "./lib/ElfHeader";
@@ -22,6 +22,7 @@ export class TinyELF implements ElfFile {
   readonly elfDynamic: ElfDynamicInterface;
   readonly elfSymbolTable: ElfSymbolTableInterface; 
   readonly elfDynamicSymbolTable: ElfSymbolTableInterface; 
+  readonly elfRelocation: ElfRelocationInterface; 
 
   readonly file: ArrayBuffer;
 
@@ -35,6 +36,7 @@ export class TinyELF implements ElfFile {
     this.elfDynamic = elfFile.elfDynamic;
     this.elfSymbolTable = elfFile.elfSymbolTable;
     this.elfDynamicSymbolTable = elfFile.elfDynamicSymbolTable;
+    this.elfRelocation = elfFile.elfRelocation;
   }
   // async readFile(file:File) {
 
@@ -104,10 +106,7 @@ export class TinyELF implements ElfFile {
       "SHT_DYNSYM"
     );
 
-    console.log(elfSymbolTable.elfSymbolTable);
-    // console.log(elfDynamicSymbolTable.elfSymbolTable);
-
-    let elfRelocations = new ElfRelocation(
+    let elfRelocation = new ElfRelocation(
       this.file,
       elfHeader.endianness,
       elfHeader.bit,
@@ -125,6 +124,7 @@ export class TinyELF implements ElfFile {
       elfDynamic: elfDynamic,
       elfSymbolTable : elfSymbolTable,
       elfDynamicSymbolTable : elfDynamicSymbolTable,
+      elfRelocation : elfRelocation
     };
 
     return elfFile;

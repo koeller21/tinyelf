@@ -67,6 +67,7 @@ export interface ElfFile {
   elfDynamic: ElfDynamicInterface;
   elfSymbolTable : ElfSymbolTableInterface;
   elfDynamicSymbolTable : ElfSymbolTableInterface;
+  elfRelocation : ElfRelocationInterface;
 }
 
 /**
@@ -194,11 +195,6 @@ export interface ElfRelocationEntry {
 
 }
 
-export enum RelocationType {
-  SHT_REL= 0, /* Relocation entries, no addends */
-  SHT_RELA = 1, /* Relocation entries with addends */
-  SHT_RELR = 2 /* RELR relative relocations */
-}
 
 /**
  * Type for encoding mapping. Maps a number to a string representation.

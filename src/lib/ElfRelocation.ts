@@ -9,19 +9,18 @@ import {
     ElfRelocationInterface,
     ElfRelocationEntry,
     ElfSectionHeaderEntry,
-    RelocationType,
     ElfBase,
     Elf32Types,
     Elf64Types,
     ElfData,
     ElfEndianness,
     ElfBitVersion,
-    ElfArchitecture
+    ElfArchitecture,
 } from "./ElfBase";
 
 export class ElfRelocation extends ElfBase implements ElfRelocationInterface {
     
-    elfRelocation: ElfRelocationEntry[];
+    elfRelocation: ElfRelocationEntry[] | null;
     
     constructor(buffer: ArrayBuffer, endianness: ElfEndianness, bit: ElfBitVersion, architecture: ElfArchitecture, elfSectionHeader : ElfSectionHeaderInterface, relocationType : string, symbolTables: object) {
         super(endianness, bit, architecture);
@@ -29,7 +28,7 @@ export class ElfRelocation extends ElfBase implements ElfRelocationInterface {
         
         let [elfRelocation, first_offset, last_offset] = this.parse(buffer, elfSectionHeader, relocationType, symbolTables);
         this.elfRelocation = elfRelocation;
-        
+
         // set data
         this.data = new DataView(buffer, first_offset, last_offset-first_offset);
     }
@@ -68,7 +67,7 @@ export class ElfRelocation extends ElfBase implements ElfRelocationInterface {
         
         // get number of entries in relocation section
         let relocation_entries_number = relocation.sh_size.raw_dec / relocation.sh_entsize.raw_dec;
-        
+
         for (let relocation_entry_count = 0; relocation_entry_count < relocation_entries_number; relocation_entry_count++) {
             
             // calculate offset
@@ -99,7 +98,7 @@ export class ElfRelocation extends ElfBase implements ElfRelocationInterface {
                 // Relocation types are processor-specific.
                 // When the text refers to a relocation entry's relocation type or symbol table index, it means the result of applying ELF[32|64]_R_TYPE or ELF[32|64]_R_SYM, respectively, to the entry's r_info member.
                 dtype = this.bit == 32 ? Elf32Types.Elf_Addr : Elf64Types.Elf_Addr;
-                r_info = dataReader.readData("r_info", dtype, undefined, false);
+                r_info = dataReader.readData("r_info", dtype);
                 // get actual relocation type from r_info
                 r_type = this.getRelocType(r_info);
                 
@@ -108,8 +107,7 @@ export class ElfRelocation extends ElfBase implements ElfRelocationInterface {
                 // For example, in a .rela.text section, the sh_link field will contain the index of the symbol table to be used for that specific section.
                 // It's this index that decides whether to use .symtab or .dynsym.
                 dtype = this.bit == 32 ? Elf32Types.Elf_Addr : Elf64Types.Elf_Addr;
-                r_sym = dataReader.readData("r_sym", dtype);
-                // r_sym.value = this.getRelocSymbol(r_info, elfSectionHeader.elfSectionHeader[relocation.sh_link.raw_dec]) as string;
+                r_sym = dataReader.readData("r_sym", dtype, undefined, false);
                 r_sym.value = this.getRelocSymbol(r_info, relocation, elfSectionHeader, symbolTables) as string;
                 
                 // SHT_RELA contains an addend additionally
@@ -150,7 +148,7 @@ export class ElfRelocation extends ElfBase implements ElfRelocationInterface {
         let r_type : number | null = null;
         let r_type_value = null; // the actual relocation type
         
-        if (!this.endianness) {
+        if (this.bit == 64) {
             // 64 bit
             switch (this.architecture) {
                 case "EM_MIPS":
@@ -200,25 +198,20 @@ export class ElfRelocation extends ElfBase implements ElfRelocationInterface {
         let r_sym_idx = null;
         let symtab_reloc_symbols = null;
         
-        // first,
         // grabbing the symbol table from the relocation section header link, e.g. "6" here:
         // [10] .rela.dyn         RELA             0000000000000508  00000508
         //  00000000000000c0  0000000000000018   A       6     0     8
         const symtab = elfSectionHeader.elfSectionHeader[relocation.sh_link.raw_dec];
+
         
-        // second,
-        // assuming that entry 6 of the section headers is e.g. ".dynsym", we now have to grab
-        // that section header link from ".dynsym" to get a reference to the string table ("7" here):
-        // [ 6] .dynsym           DYNSYM           00000000000003c8  000003c8
-        // 0000000000000090  0000000000000018   A       7     1     8
-        const strtab = elfSectionHeader.elfSectionHeader[symtab.sh_link.raw_dec];
-        
-        if (!this.endianness) {
-            // 32 bit
-            r_sym_idx = r_info.raw_dec >> 32;
-        } else {
+        if (this.bit == 64) {
             // 64 bit
-            r_sym_idx = r_info.raw_dec >> 8;
+            // Get the high 32 bits since JS uses 32 bit for bitwise ops internally
+            let high = (r_info.raw_dec / 0x100000000) | 0; 
+            r_sym_idx = high >> 32;
+        } else {
+            // 32 bit
+            r_sym_idx = r_info.raw_dec >> 16; // 8??
         }
         
         // if either the index or the symtab is null, just return null
@@ -245,27 +238,22 @@ export class ElfRelocation extends ElfBase implements ElfRelocationInterface {
         .symtab could still exist, but it's often stripped to reduce the file size, and it's not used for dynamic linking.
         You'll often see sections like .rela.dyn and .rela.plt refer to indices in .dynsym.
         */
-        // console.log(strtab);
-        // console.log(symbolTables);
-        console.log("-------------");
 
         if (symtab.sh_type.value == "SHT_DYNSYM") {
             symtab_reloc_symbols = symbolTables["SHT_DYNSYM"];
         } else if (symtab.sh_type.value == "SHT_STRTAB") {
-            symtab_reloc_symbols = symbolTables["SHT_SYMTAB"] ;
+            symtab_reloc_symbols = symbolTables["SHT_SYMTAB"];
         } else {
             // if the symtab is neither of type SHT_DYNSYM nor of type SHT_SYMTAB, just return
             return undefined;
         }
 
-        // console.log(symtab_reloc_symbols);
-        
         // check that r_sym_idx is not geq than symbol table length - 1
         if (r_sym_idx >= symtab_reloc_symbols.length) {
             return undefined;
         }
 
-        return symtab_reloc_symbols[r_sym_idx].st_name;
+        return symtab_reloc_symbols.elfSymbolTable[r_sym_idx].st_name.value;
         
     }
 }
