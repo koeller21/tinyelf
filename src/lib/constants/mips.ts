@@ -1,4 +1,4 @@
-const R_MIPS_TYPE = {
+export const R_MIPS_TYPE = {
   0: "R_MIPS_NONE",
   1: "R_MIPS_16",
   2: "R_MIPS_32" /* In Elf 64- alias R_MIPS_ADD */,
@@ -64,7 +64,7 @@ const R_MIPS_TYPE = {
   66: "R_MIPS_max",
   /* These relocs are used for the mips16.  */
   100: "R_MIPS16_min",
-  100: "R_MIPS16_26",
+//   100: "R_MIPS16_26",
   101: "R_MIPS16_GPREL",
   102: "R_MIPS16_GOT16",
   103: "R_MIPS16_CALL16",

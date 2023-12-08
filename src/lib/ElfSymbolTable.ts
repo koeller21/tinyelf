@@ -153,7 +153,7 @@ export class ElfSymbolTable extends ElfBase implements ElfSymbolTableInterface {
             dtype = this.bit == 32 ? Elf32Types.Elf_Word : Elf64Types.Elf_Xword;
             const st_size = dataReader.readData("st_size", dtype);
 
-            let symtab_entry = {
+            let symtab_entry : ElfSymbolTableEntry = {
                 st_name: st_name,
                 st_bind: st_bind,
                 st_type: st_type,

@@ -171,6 +171,27 @@ export interface ElfSymbolTableEntry {
   st_size : ElfData;
 }
 
+/**
+ * Interface for the ELF relocation structure.
+ */
+export interface ElfRelocationInterface {
+  elfRelocation: ElfRelocationEntry[] | null;
+}
+
+export interface ElfRelocationEntry {
+  r_offset : ElfData;
+  r_info : ElfData | null; // not present in RELR
+  r_type : ElfData | null; // not present in RELR
+  r_sym : ElfData | null; // not present in RELR
+  r_addend : ElfData | null; // not present in non-RELA
+
+}
+
+export enum RelocationType {
+  SHT_REL= 0, /* Relocation entries, no addends */
+  SHT_RELA = 1, /* Relocation entries with addends */
+  SHT_RELR = 2 /* RELR relative relocations */
+}
 
 /**
  * Type for encoding mapping. Maps a number to a string representation.
