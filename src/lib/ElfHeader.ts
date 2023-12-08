@@ -11,6 +11,7 @@ import {
 	Elf64Types,
 	ElfBitVersion,
 	ElfEndianness,
+	ElfArchitecture
 } from "./ElfBase";
 
 // EI_NIDENT_CONST is typically defined as 16
@@ -25,12 +26,17 @@ export class ElfHeader extends ElfBase implements ElfHeaderInterface {
 		
 		this.e_ident = this.parse_e_ident(buffer);
 		
+		// set bit version (i.e. class) (32, 64, none)
 		this.bit = (this.e_ident.EI_CLASS.value == "ELFCLASS32" ? 32 : 64) as ElfBitVersion;
 		
+		// set endianness (false=LSB, true=MSB)
 		this.endianness = (this.e_ident.EI_DATA.value == "ELFDATA2LSB") as ElfEndianness;
-		
+
 		let [e_entries, last_offset] = this.parse_ehdr(buffer);
 		this.e_entries = e_entries;
+
+		// set architecture (like e_machine in the header)
+		this.architecture = this.e_entries.e_machine.value as ElfArchitecture;
 		
 		// set data
 		this.data = new DataView(buffer, 0, last_offset);
@@ -158,11 +164,11 @@ export class ElfHeader extends ElfBase implements ElfHeaderInterface {
 		
 		/* This member of the structure identifies the object file type */
 		dtype = this.bit == 32 ? Elf32Types.Elf_Half : Elf64Types.Elf_Half;
-		const e_machine = dataReader.readData("e_machine",dtype,elf_hdr.e_machine);
+		const e_machine = dataReader.readData("e_machine",dtype, elf_hdr.e_machine);
 		
 		/* This member of the structure identifies the object file type */
 		dtype = this.bit == 32 ? Elf32Types.Elf_Word : Elf64Types.Elf_Word;
-		const e_version = dataReader.readData("e_version",dtype,elf_hdr.e_version);
+		const e_version = dataReader.readData("e_version",dtype, elf_hdr.e_version);
 		
 		/*
 		This member gives the virtual address to which the system first

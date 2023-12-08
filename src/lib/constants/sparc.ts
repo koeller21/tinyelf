@@ -1,4 +1,4 @@
-const R_SPARC_TYPE = {
+export const R_SPARC_TYPE = {
   0: "R_SPARC_NONE",
   1: "R_SPARC_8",
   2: "R_SPARC_16",

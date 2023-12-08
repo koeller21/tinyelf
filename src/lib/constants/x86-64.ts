@@ -1,4 +1,4 @@
-const R_X86_64_TYPE = {
+export const R_X86_64_TYPE = {
   0: "R_X86_64_NONE" /* No reloc */,
   1: "R_X86_64_64" /* Direct 64 bit  */,
   2: "R_X86_64_PC32" /* PC relative 32 bit signed */,

@@ -19,7 +19,7 @@ implements ElfProgramHeaderInterface
 {
     elfProgramHeader: ElfProgramHeaderEntry[];
     
-    constructor(buffer: ArrayBuffer,endianness: ElfEndianness,bit: ElfBitVersion,e_phnum: ElfData,e_phoff: ElfData,e_phentsize: ElfData) {
+    constructor(buffer: ArrayBuffer, endianness: ElfEndianness, bit: ElfBitVersion, e_phnum: ElfData, e_phoff: ElfData, e_phentsize: ElfData) {
         super(endianness, bit);
         
         let [elfProgramHeader, last_offset] = this.parse(buffer,e_phnum,e_phoff,e_phentsize);

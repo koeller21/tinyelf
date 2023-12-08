@@ -13,6 +13,13 @@ export type ElfBitVersion = undefined | 32 | 64;
 export type ElfEndianness = undefined | true | false;
 
 /**
+ * Type for defining the machine ISA-architecture the ELF binary is compiled for
+ *
+ * @type {undefined | string} undefined for unknown, string according to e_machine
+ */
+export type ElfArchitecture = undefined | string;
+
+/**
  * Map for ELF 32-bit data types sizes in bytes.
  */
 export const Elf32Types = {
@@ -221,12 +228,18 @@ export abstract class ElfBase {
   bit: ElfBitVersion = 32; // defaults to 32 bit
 
   /**
+   * Architecture type of this binary
+   */
+  architecture: ElfArchitecture = "EM_X86_64"; // defaults to x86_64
+
+  /**
    * Constructs the ElfBase instance.
    *
-   * @param data - The DataView instance representing the ELF file data.
    */
-  constructor(endianness?: ElfEndianness, bit?: ElfBitVersion) {
+  constructor(endianness?: ElfEndianness, bit?: ElfBitVersion, architecture?: ElfArchitecture) {
     this.endianness = endianness;
     this.bit = bit;
+    this.architecture = architecture;
   }
+
 }
