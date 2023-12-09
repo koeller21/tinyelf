@@ -1,7 +1,7 @@
 {
-  "name": "tinyelf",
-  "version": "0.0.2",
-  "description": "A tiny but mighty ELF binary parser written in pure Javascript",
+  "name": "elfbin.js",
+  "version": "0.0.1",
+  "description": "A tiny but mighty ELF binary parser written in Typescript",
   "keywords": [
     "elf",
     "binary",
@@ -13,21 +13,22 @@
     "ARM",
     "linux",
     "unix",
-    "tinyelf"
+    "elfbin",
+    "elfbin.js"
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/koeller21/tinyelf.git"
+    "url": "git+https://github.com/koeller21/elfbin.git"
   },
   "author": "Arne Koeller",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/koeller21/tinyelf/issues"
+    "url": "https://github.com/koeller21/elfbin/issues"
   },
-  "homepage": "https://github.com/koeller21/tinyelf#readme",
-  "source": "src/tinyelf.ts",
-  "main": "dist/tinyelf.cjs",
-  "module": "dist/tinyelf.mjs",
+  "homepage": "https://github.com/koeller21/elfbin#readme",
+  "source": "src/elfbin.ts",
+  "main": "dist/elfbin.cjs",
+  "module": "dist/elfbin.mjs",
   "scripts": {
     "watch": "parcel watch",
     "build": "parcel build"

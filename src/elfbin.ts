@@ -14,8 +14,9 @@ import { ElfSectionHeader } from "./lib/ElfSectionHeader";
 import { ElfDynamic } from "./lib/ElfDynamic";
 import { ElfSymbolTable } from "./lib/ElfSymbolTable";
 import { ElfRelocation } from "./lib/ElfRelocation";
+import { ElfSymbolVersion } from "./lib/ElfSymbolVersion";
 
-export class TinyELF implements ElfFile {
+export class ElfBin implements ElfFile {
   readonly elfHeader: ElfHeaderInterface;
   readonly elfProgramHeader: ElfProgramHeaderInterface;
   readonly elfSectionHeader: ElfSectionHeaderInterface;
@@ -116,6 +117,14 @@ export class TinyELF implements ElfFile {
       {"SHT_SYMTAB" : elfSymbolTable , "SHT_DYNSYM": elfDynamicSymbolTable}
     );
 
+    let elfSymbolVersion= new ElfSymbolVersion(
+      this.file,
+      elfHeader.endianness,
+      elfHeader.bit,
+      elfSectionHeader,
+      elfDynamic
+    );
+
 
     let elfFile: ElfFile = {
       elfHeader: elfHeader,
@@ -158,9 +167,6 @@ export class TinyELF implements ElfFile {
     // [this.elf_contents.elf_version_requirements, this.elf_contents.elf_version_requirements_auxillary] = this.#processElfVersionRequirements();
     // [this.elf_contents.elf_version_definitions, this.elf_contents.elf_version_definitions_auxillary] = this.#processElfVersionDefinitions();
   }
-
-  // #processVerneedAux32(offset_base) {
-  // }
 
   // #processVerneedAux64(offset_base, previous_verneedaux_entries) {
 
@@ -237,9 +243,6 @@ export class TinyELF implements ElfFile {
   //     previous_verneedaux_entries.push(verneedaux_entry);
 
   //     return previous_verneedaux_entries;
-  // }
-
-  // #processElfVersionRequirements32() {
   // }
 
   // #processElfVersionRequirements64() {
@@ -373,9 +376,6 @@ export class TinyELF implements ElfFile {
 
   //     return [verneed_entries, verneedaux_entries];
 
-  // }
-
-  // #processVerdAux32(offset_base, previous_verdaux_entries) {
   // }
 
   // #processVerdAux64(offset_base, previous_verdaux_entries) {

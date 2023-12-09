@@ -1,8 +1,9 @@
 <div align="center">
 
-<img src="./docs/logo.png">
-<br>
-<br>
+<span style="font-size:5rem;">
+elfbin.js
+</span>
+
 A tiny but mighty ELF binary parser written in JS/TS.
 
 <h3>
@@ -15,9 +16,8 @@ A tiny but mighty ELF binary parser written in JS/TS.
 
 ---
 
-Can be used in **both** front-end (HTML) and back-end (nodejs).
-
-Called tinyelf because I've taken inspiration from <a href="https://github.com/tinygrad/tinygrad">tinygrad</a> to try to keep the code base minimal and maintainable. Written in Typescript, an educational project.
+- Can be used in <strong><ins>both</ins></strong> front-end (HTML) and back-end (node).
+- An educational project, for any production-related front-end project, you should probably consider using back-end processing or webassembly.
 
 ---
 
@@ -32,8 +32,8 @@ Called tinyelf because I've taken inspiration from <a href="https://github.com/t
   <head></head>
   <body>
     <script type="module">
-      import { TinyELF } from "tinyelf.mjs";
-      let x = new TinyELF();
+      import { ElfBin } from "elfbin.mjs";
+      let x = new ElfBin();
     </script>
   </body>
 </html>
@@ -44,17 +44,17 @@ Called tinyelf because I've taken inspiration from <a href="https://github.com/t
 ##### Install
 
 ```console
-npm i tinyelf
+npm i elfbin
 ```
 
 ##### Usage
 
 ```js
-// import TinyELF module
-const { TinyELF } = require("tinyelf");
+// import ElfBin module
+const { ElfBin } = require("elfbin");
 
-// create a new instance of TinyELF
-let elfParser = new TinyELF();
+// create a new instance of ElfBin
+let elfParser = new ElfBin();
 ```
 
 See <a href="./docs/examples.md">examples.md</a> for more examples.

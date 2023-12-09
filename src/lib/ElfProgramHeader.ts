@@ -13,10 +13,8 @@ import {
     ElfBitVersion,
 } from "./ElfBase";
 
-export class ElfProgramHeader
-extends ElfBase
-implements ElfProgramHeaderInterface
-{
+export class ElfProgramHeader extends ElfBase implements ElfProgramHeaderInterface {
+
     elfProgramHeader: ElfProgramHeaderEntry[];
     
     constructor(buffer: ArrayBuffer, endianness: ElfEndianness, bit: ElfBitVersion, e_phnum: ElfData, e_phoff: ElfData, e_phentsize: ElfData) {
@@ -34,11 +32,11 @@ implements ElfProgramHeaderInterface
         let phdr_entries: ElfProgramHeaderEntry[] = [];
         
         for (let phdr_entry_count = 0; phdr_entry_count < e_phnum.raw_dec; phdr_entry_count++) {
-            let phdr_entry_offset =
-            e_phoff.raw_dec + phdr_entry_count * e_phentsize.raw_dec;
+            
+            let phdr_entry_offset = e_phoff.raw_dec + phdr_entry_count * e_phentsize.raw_dec;
             
             let dtype = 0;
-            const dataReader = new ElfDataReader(new DataView(buffer, 0, buffer.byteLength), this.bit, this.endianness,phdr_entry_offset);
+            const dataReader = new ElfDataReader(new DataView(buffer, 0, buffer.byteLength), this.bit, this.endianness, phdr_entry_offset);
             
             /*
             This member of the structure indicates what kind of segment this array element
