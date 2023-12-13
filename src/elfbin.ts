@@ -6,6 +6,7 @@ import {
   ElfDynamicInterface,
   ElfSymbolTableInterface,
   ElfRelocationInterface,
+  ElfSymbolVersionInterface,
 } from "./lib/ElfBase";
 
 import { ElfHeader } from "./lib/ElfHeader";
@@ -21,9 +22,10 @@ export class ElfBin implements ElfFile {
   readonly elfProgramHeader: ElfProgramHeaderInterface;
   readonly elfSectionHeader: ElfSectionHeaderInterface;
   readonly elfDynamic: ElfDynamicInterface;
-  readonly elfSymbolTable: ElfSymbolTableInterface; 
-  readonly elfDynamicSymbolTable: ElfSymbolTableInterface; 
-  readonly elfRelocation: ElfRelocationInterface; 
+  readonly elfSymbolTable: ElfSymbolTableInterface;
+  readonly elfDynamicSymbolTable: ElfSymbolTableInterface;
+  readonly elfRelocation: ElfRelocationInterface;
+  readonly elfSymbolVersion: ElfSymbolVersionInterface; 
 
   readonly file: ArrayBuffer;
 
@@ -38,6 +40,7 @@ export class ElfBin implements ElfFile {
     this.elfSymbolTable = elfFile.elfSymbolTable;
     this.elfDynamicSymbolTable = elfFile.elfDynamicSymbolTable;
     this.elfRelocation = elfFile.elfRelocation;
+    this.elfSymbolVersion = elfFile.elfSymbolVersion;
   }
   // async readFile(file:File) {
 
@@ -133,7 +136,8 @@ export class ElfBin implements ElfFile {
       elfDynamic: elfDynamic,
       elfSymbolTable : elfSymbolTable,
       elfDynamicSymbolTable : elfDynamicSymbolTable,
-      elfRelocation : elfRelocation
+      elfRelocation : elfRelocation,
+      elfSymbolVersion : elfSymbolVersion,
     };
 
     return elfFile;

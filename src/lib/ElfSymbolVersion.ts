@@ -1,4 +1,5 @@
 
+
 import { ElfDataReader } from "./ElfDataReader";
 
 import {
@@ -6,11 +7,12 @@ import {
     ElfSectionHeaderEntry,
     ElfVerneedEntry,
     ElfVernauxEntry,
-    ElfSymbolVersioning,
+    ElfVerdauxEntry,
+    ElfVerdefEntry,
+    ElfSymbolVersionInterface,
     ElfBase,
     Elf32Types,
     Elf64Types,
-    ElfData,
     ElfEndianness,
     ElfBitVersion,
     ElfDynamicInterface,
@@ -20,20 +22,20 @@ interface SymVersionDict {
     [details: string] : ElfSectionHeaderEntry;
 } 
 
-export class ElfSymbolVersion extends ElfBase implements ElfSymbolVersioning{
+export class ElfSymbolVersion extends ElfBase implements ElfSymbolVersionInterface{
 
     elfVerneed: ElfVerneedEntry[] | null;
 	elfVernaux : ElfVernauxEntry[] | null;
+    elfVerdef : ElfVerdefEntry[] | null;
+	elfVerdaux : ElfVerdauxEntry[] | null;
 
     
     constructor(buffer: ArrayBuffer, endianness: ElfEndianness, bit: ElfBitVersion, elfSectionHeader : ElfSectionHeaderInterface, elfDynamic: ElfDynamicInterface) {
         super(endianness, bit);
         
-        // let [elfProgramHeader, last_offset] = this.parse(buffer, elfSectionHeader);
-        // this.elfProgramHeader = elfProgramHeader;
         [this.elfVerneed, this.elfVernaux] = this.processElfVersionRequirements(buffer, elfSectionHeader, elfDynamic);
+        [this.elfVerdef, this.elfVerdaux] = this.processElfVersionDefinitions(buffer, elfSectionHeader, elfDynamic);
 
-        
         // set data
         // this.data = new DataView(buffer, e_phoff.raw_dec, last_offset-e_phoff.raw_dec);
     }
@@ -108,7 +110,7 @@ export class ElfSymbolVersion extends ElfBase implements ElfSymbolVersioning{
         */
         
         let sym_version_information_sections : SymVersionDict = {};
-        let verneed_entries = [];
+        let verneed_entries : ElfVerneedEntry[] = [];
         let verneedaux_entries : ElfVernauxEntry[] = [];
         
         for (const section_header of elfSectionHeader.elfSectionHeader) {
@@ -194,32 +196,21 @@ export class ElfSymbolVersion extends ElfBase implements ElfSymbolVersioning{
         
     }
     
-    private processVerdAux(offset_base, previous_verdaux_entries) {
+    private processVerdAux(buffer: ArrayBuffer, offset_base : number, previous_verdaux_entries : ElfVerdauxEntry[]) : ElfVerdauxEntry[] {
         
-        let offset_entry = offset_base;
+        let offset_entry : number = offset_base;
+
+        let dtype = 0;
+        const dataReader = new ElfDataReader(new DataView(buffer, 0, buffer.byteLength), this.bit, this.endianness, offset_entry);
         
         // 	Offset to the version or dependency name string in the section header, in bytes.
-        const vda_name = {
-            value: this.elfFile.getUint32(offset_entry, this.is_lsb),
-            raw_dec: this.elfFile.getUint32(offset_entry, this.is_lsb).toString(),
-            raw_hex: this.elfFile.getUint32(offset_entry, this.is_lsb).toString(16),
-            size_bytes: this.data_types.Elf_Word,
-            offset: offset_entry,
-            name: "vda_name"
-        };
-        offset_entry += this.data_types.Elf_Word;
+        dtype = this.bit == 32 ? Elf32Types.Elf_Word : Elf64Types.Elf_Word;
+        const vda_name = dataReader.readData("vda_name", dtype);
         
         // Offset to the next vernaux entry, in bytes.
-        const vda_next = {
-            value: this.elfFile.getUint32(offset_entry, this.is_lsb),
-            raw_dec: this.elfFile.getUint32(offset_entry, this.is_lsb).toString(),
-            raw_hex: this.elfFile.getUint32(offset_entry, this.is_lsb).toString(16),
-            size_bytes: this.data_types.Elf_Word,
-            offset: offset_entry,
-            name: "vda_next"
-        };
-        offset_entry += this.data_types.Elf_Word;
-        
+        dtype = this.bit == 32 ? Elf32Types.Elf_Word : Elf64Types.Elf_Word;
+        const vda_next = dataReader.readData("vda_next", dtype);
+
         let verdaux_entry = {
             vda_name: vda_name,
             vda_next: vda_next
@@ -227,7 +218,7 @@ export class ElfSymbolVersion extends ElfBase implements ElfSymbolVersioning{
         
         if (Number(vda_next.raw_dec) != 0) {
             offset_base += Number(vda_next.raw_dec);
-            this.processVerdAux(offset_base, previous_verdaux_entries);
+            this.processVerdAux(buffer, offset_base, previous_verdaux_entries);
         }
         
         previous_verdaux_entries.push(verdaux_entry);
@@ -235,7 +226,7 @@ export class ElfSymbolVersion extends ElfBase implements ElfSymbolVersioning{
         return previous_verdaux_entries;
     }
     
-    private processElfVersionDefinitions() {
+    private processElfVersionDefinitions(buffer: ArrayBuffer, elfSectionHeader : ElfSectionHeaderInterface, elfDynamic : ElfDynamicInterface) : [ElfVerdefEntry[] | null, ElfVerdauxEntry[] | null] {
         /*
         All ELF objects may provide or depend on versioned symbols. Symbol Versioning is implemented by 3 section types: SHT_GNU_versym, SHT_GNU_verdef, and SHT_GNU_verneed.
         This method handels section type: SHT_GNU_verdef.
@@ -258,115 +249,79 @@ export class ElfSymbolVersion extends ElfBase implements ElfSymbolVersioning{
         "
         */
         
-        let sym_version_information_sections = [];
-        let verndef_entries = [];
-        let verdaux_entries = [];
+        let sym_version_information_sections : SymVersionDict = {};
+        let verndef_entries : ElfVerdefEntry[] = [];
+        let verdaux_entries : ElfVerdauxEntry[] = [];
         
-        for (const section_header of this.elf_contents.elf_shdr) {
+        for (const section_header of elfSectionHeader.elfSectionHeader) {
             if (section_header.sh_type.value == "SHT_GNU_verdef") {
-                sym_version_information_sections[section_header.sh_type.value] = section_header;
+                sym_version_information_sections[section_header.sh_type.value as string] = section_header;
             }
+        }
+
+        // check if dynamic section exists, if not, there shouldn't be contain symbol versions since those are for dynamically linked executables & SO's
+        if (elfDynamic.elfDynamic != null){
+            return [null, null];
         }
         
         // check if SHT_GNU_verdef exists and if DT_VERDEF is set in dynamic section
-        if ("SHT_GNU_verdef" in sym_version_information_sections && this.elf_contents.elf_dyn.some(item => item.d_tag.value === 'DT_VERDEF')) {
+        if ("SHT_GNU_verdef" in sym_version_information_sections && elfDynamic.elfDynamic!.some(item => item.d_tag.value === "DT_VERDEF")) {
             
             // check DT_VERDEFNUM to figure out how many entries are there and loop through them
-            let verdefnum = 1;
-            if (this.elf_contents.elf_dyn.some(item => item.d_tag.value === "DT_VERDEFNUM")) {
-                verdefnum = this.elf_contents.elf_dyn.find(item => item.d_tag.value === 'DT_VERDEFNUM').d_un.raw_dec;
+            let verdefnum : number | undefined = 1;
+            if (elfDynamic.elfDynamic!.some(item => item.d_tag.value === "DT_VERDEFNUM")) {
+                verdefnum = elfDynamic.elfDynamic!.find(item => item.d_tag.value === 'DT_VERDEFNUM')?.d_un.raw_dec;
             }
-            
+
+            // ToDo check if verdefnum is not undefined or null
+
             // ToDo check if DT_VERDEFNUM and sh_info of section header are the same
+
             // get offset (these are dynamic offsets, so we have to update them iteratively)
-            let verdef_offset_base = sym_version_information_sections["SHT_GNU_verdef"].sh_offset.value;
+            let verdef_offset_base : number = Number(sym_version_information_sections["SHT_GNU_verdef"].sh_offset.value);
+        
             
-            for (let verdef_entry_count = 0; verdef_entry_count < verdefnum; verdef_entry_count++) {
+            for (let verdef_entry_count = 0; verdef_entry_count < verdefnum!; verdef_entry_count++) {
                 
                 let verdef_offset = verdef_offset_base;
+
+                let dtype = 0;
+                const dataReader = new ElfDataReader(new DataView(buffer, 0, buffer.byteLength), this.bit, this.endianness, verdef_offset as number);
                 
                 // Version revision. This field shall be set to 1.
-                const vd_version = {
-                    value: this.elfFile.getUint16(verdef_offset, this.is_lsb),
-                    raw_dec: this.elfFile.getUint16(verdef_offset, this.is_lsb).toString(),
-                    raw_hex: this.elfFile.getUint16(verdef_offset, this.is_lsb).toString(16),
-                    size_bytes: this.data_types.Elf_Half,
-                    offset: verdef_offset,
-                    name: "vd_version"
-                };
-                verdef_offset += this.data_types.Elf_Half;
-                
+                dtype = this.bit == 32 ? Elf32Types.Elf_Half : Elf64Types.Elf_Half;
+                const vd_version = dataReader.readData("vd_version", dtype);
+               
                 // Version information flag bitmask.
-                const vd_flags = {
-                    value: this.elfFile.getUint16(verdef_offset, this.is_lsb),
-                    raw_dec: this.elfFile.getUint16(verdef_offset, this.is_lsb).toString(),
-                    raw_hex: this.elfFile.getUint16(verdef_offset, this.is_lsb).toString(16),
-                    size_bytes: this.data_types.Elf_Half,
-                    offset: verdef_offset,
-                    name: "vd_flags"
-                };
-                verdef_offset += this.data_types.Elf_Half;
+                dtype = this.bit == 32 ? Elf32Types.Elf_Half : Elf64Types.Elf_Half;
+                const vd_flags = dataReader.readData("vd_flags", dtype);
                 
                 // Version index numeric value referencing the SHT_GNU_versym section.
-                const vd_ndx = {
-                    value: this.elfFile.getUint16(verdef_offset, this.is_lsb),
-                    raw_dec: this.elfFile.getUint16(verdef_offset, this.is_lsb).toString(),
-                    raw_hex: this.elfFile.getUint16(verdef_offset, this.is_lsb).toString(16),
-                    size_bytes: this.data_types.Elf_Half,
-                    offset: verdef_offset,
-                    name: "vd_ndx"
-                };
-                verdef_offset += this.data_types.Elf_Half;
+                dtype = this.bit == 32 ? Elf32Types.Elf_Half : Elf64Types.Elf_Half;
+                const vd_ndx = dataReader.readData("vd_ndx", dtype);
                 
                 // Number of associated verdaux array entries.
-                const vd_cnt = {
-                    value: this.elfFile.getUint16(verdef_offset, this.is_lsb),
-                    raw_dec: this.elfFile.getUint16(verdef_offset, this.is_lsb).toString(),
-                    raw_hex: this.elfFile.getUint16(verdef_offset, this.is_lsb).toString(16),
-                    size_bytes: this.data_types.Elf_Half,
-                    offset: verdef_offset,
-                    name: "vd_cnt"
-                };
-                verdef_offset += this.data_types.Elf_Half;
-                
+                dtype = this.bit == 32 ? Elf32Types.Elf_Half : Elf64Types.Elf_Half;
+                const vd_cnt = dataReader.readData("vd_cnt", dtype);
+              
                 // Offset to the next verneed entry, in bytes.
-                const vd_hash = {
-                    value: this.elfFile.getUint32(verdef_offset, this.is_lsb),
-                    raw_dec: this.elfFile.getUint32(verdef_offset, this.is_lsb).toString(),
-                    raw_hex: this.elfFile.getUint32(verdef_offset, this.is_lsb).toString(16),
-                    size_bytes: this.data_types.Elf_Word,
-                    offset: verdef_offset,
-                    name: "vd_hash"
-                };
-                verdef_offset += this.data_types.Elf_Word;
-                
+                dtype = this.bit == 32 ? Elf32Types.Elf_Word : Elf64Types.Elf_Word;
+                const vd_hash = dataReader.readData("vd_hash", dtype);
+              
                 // Offset in bytes to a corresponding entry in an array of Elfxx_Verdaux structures
-                const vd_aux = {
-                    value: this.elfFile.getUint32(verdef_offset, this.is_lsb),
-                    raw_dec: this.elfFile.getUint32(verdef_offset, this.is_lsb).toString(),
-                    raw_hex: this.elfFile.getUint32(verdef_offset, this.is_lsb).toString(16),
-                    size_bytes: this.data_types.Elf_Word,
-                    offset: verdef_offset,
-                    name: "vd_aux"
-                };
-                verdef_offset += this.data_types.Elf_Word;
+                dtype = this.bit == 32 ? Elf32Types.Elf_Word : Elf64Types.Elf_Word;
+                const vd_aux = dataReader.readData("vd_aux", dtype);
                 
                 // get verdef auxillary entries
                 let verdef_aux_offset = verdef_offset_base + Number(vd_aux.raw_dec);
-                verdaux_entries = this.processVerdAux(verdef_aux_offset, verdaux_entries);
+                verdaux_entries = this.processVerdAux(buffer, verdef_aux_offset, verdaux_entries);
                 
                 // Offset to the next verdef entry, in bytes.
-                const vd_next = {
-                    value: this.elfFile.getUint32(verdef_offset, this.is_lsb),
-                    raw_dec: this.elfFile.getUint32(verdef_offset, this.is_lsb).toString(),
-                    raw_hex: this.elfFile.getUint32(verdef_offset, this.is_lsb).toString(16),
-                    size_bytes: this.data_types.Elf_Word,
-                    offset: verdef_offset,
-                    name: "vd_next"
-                };
-                verdef_offset += this.data_types.Elf_Word;
+                dtype = this.bit == 32 ? Elf32Types.Elf_Word : Elf64Types.Elf_Word;
+                const vd_next = dataReader.readData("vd_next", dtype);
+
                 
-                let verdef_entry = {
+                let verdef_entry : ElfVerdefEntry = {
                     vd_version: vd_version,
                     vd_flags: vd_flags,
                     vd_ndx: vd_ndx,

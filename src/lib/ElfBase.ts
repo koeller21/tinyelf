@@ -68,6 +68,7 @@ export interface ElfFile {
 	elfSymbolTable : ElfSymbolTableInterface;
 	elfDynamicSymbolTable : ElfSymbolTableInterface;
 	elfRelocation : ElfRelocationInterface;
+	elfSymbolVersion : ElfSymbolVersionInterface;
 }
 
 /**
@@ -197,11 +198,12 @@ export interface ElfRelocationEntry {
 /**
 * Interface for the ELF symbol versioning
 */
-export interface ElfSymbolVersioning {
+export interface ElfSymbolVersionInterface {
 	elfVerneed : ElfVerneedEntry[] | null;
 	elfVernaux : ElfVernauxEntry[] | null;
+	elfVerdef : ElfVerdefEntry[] | null;
+	elfVerdaux : ElfVerdauxEntry[] | null;
 }
-
 
 export interface ElfVerneedEntry {
 	vn_version : ElfData;
@@ -217,6 +219,21 @@ export interface ElfVernauxEntry {
 	vna_other : ElfData;
 	vna_name : ElfData;
 	vna_next : ElfData;
+}
+
+export interface ElfVerdefEntry {
+	vd_version : ElfData;
+	vd_flags : ElfData;
+	vd_ndx : ElfData;
+	vd_cnt : ElfData;
+	vd_hash : ElfData;
+	vd_aux : ElfData;
+	vd_next : ElfData;
+}
+
+export interface ElfVerdauxEntry {
+	vda_name : ElfData;
+	vda_next : ElfData;
 }
 
 /**
