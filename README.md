@@ -1,8 +1,6 @@
 <div align="center">
 
-<span style="font-size:5rem;">
-elfbin.js
-</span>
+![logo](https://github.com/koeller21/elfbin/blob/main/docs/logo.jpg?raw=true)
 
 A tiny but mighty ELF binary parser written in JS/TS.
 
